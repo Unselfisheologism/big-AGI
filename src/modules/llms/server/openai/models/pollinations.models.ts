@@ -250,6 +250,13 @@ export function pollinationsModels(): ModelDescriptionSchema[] {
 export function pollinationsModelSort(a: ModelDescriptionSchema, b: ModelDescriptionSchema): number {
   // Basic sorting: prioritize models with interfaces, then alphabetically
   if (a.interfaces.length > 0 && b.interfaces.length === 0) return -1;
-  if (a.interfaces.length === 0 && b.interfaces.length > 0) return 1;
-  return a.id.localeCompare(b.id);
+ if (a.interfaces.length === 0 && b.interfaces.length > 0) return 1;
+
+  // Safely compare IDs
+  const aId = a.id || ''; // Use empty string if id is missing
+  const bId = b.id || ''; // Use empty string if id is missing
+
+  // Ensure IDs are strings before localeCompare
+  if (typeof aId !== 'string' || typeof bId !== 'string') return 0; // Cannot compare, consider them equal for sorting purposes
+ return aId.localeCompare(bId);
 }
