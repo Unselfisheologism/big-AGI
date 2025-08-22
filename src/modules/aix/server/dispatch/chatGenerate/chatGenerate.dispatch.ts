@@ -1,6 +1,7 @@
 import { ollamaAccess } from '~/modules/llms/server/ollama/ollama.router';
 import { openAIAccess } from '~/modules/llms/server/openai/openai.router';
 
+import { TRPCError } from '@trpc/server';
 import type { AixAPI_Access, AixAPI_Model, AixAPIChatGenerate_Request } from '../../api/aix.wiretypes';
 import type { AixDemuxers } from '../stream.demuxers';
 
@@ -92,4 +93,10 @@ export function createChatGenerateDispatch(access: AixAPI_Access, model: AixAPI_
         chatGenerateParse: streaming ? createOpenAIChatCompletionsChunkParser() : createOpenAIChatCompletionsParserNS(),
       };
   }
+
+  // If we reach here, the dialect is not supported
+ throw new TRPCError({
+ code: 'BAD_REQUEST',
+ message: `Unsupported dialect: ${access.dialect}`,
+ });
 }
