@@ -14,12 +14,8 @@ import { Brand } from '~/common/app.config';
 import { OpenAIWire_API_Images_Generations, OpenAIWire_API_Models_List, OpenAIWire_API_Moderations_Create } from '~/modules/aix/server/dispatch/wiretypes/openai.wiretypes';
 
 import { ListModelsResponse_schema, ModelDescriptionSchema } from '../llm.server.types';
-import { alibabaModelSort, alibabaModelToModelDescription } from './models/alibaba.models';
-import { azureDeploymentFilter, azureDeploymentToModelDescription, azureParseFromDeploymentsAPI } from './models/azure.models';
-import { chutesAIHeuristic, chutesAIModelsToModelDescriptions } from './models/chutesai.models';
 import { deepseekModelFilter, deepseekModelSort, deepseekModelToModelDescription } from './models/deepseek.models';
-import { fastAPIHeuristic, fastAPIModels } from './models/fastapi.models';
-import { fireworksAIHeuristic, fireworksAIModelsToModelDescriptions } from './models/fireworksai.models';
+import { pollinationsModels } from './models/pollinations.models';
 import { groqModelFilter, groqModelSortFn, groqModelToModelDescription } from './models/groq.models';
 import { lmStudioModelToModelDescription, localAIModelSortFn, localAIModelToModelDescription } from './models/models.data';
 import { mistralModels } from './models/mistral.models';
@@ -32,15 +28,15 @@ import { wireLocalAIModelsApplyOutputSchema, wireLocalAIModelsAvailableOutputSch
 import { xaiModelDescriptions, xaiModelSort } from './models/xai.models';
 
 
-const openAIDialects = z.enum([
-  'alibaba', 'azure', 'deepseek', 'groq', 'lmstudio', 'localai', 'mistral', 'openai', 'openpipe', 'openrouter', 'perplexity', 'togetherai', 'xai',
+const openAIDialects = z.enum([ // Note: this enum still contains old dialects, but only 'localai' will be handled specifically in openAIAccess
+  'alibaba', 'azure', 'deepseek', 'groq', 'lmstudio', 'localai', 'mistral', 'openai', 'openpipe', 'openrouter', 'perplexity', 'togetherai', 'xai', 'pollinations.ai',
 ]);
 export type OpenAIDialects = z.infer<typeof openAIDialects>;
 
 export const openAIAccessSchema = z.object({
   dialect: openAIDialects,
   oaiKey: z.string().trim(),
-  oaiOrg: z.string().trim(), // [OpenPipe] we have a hack here, where we put the tags stringinfied JSON in here - cleanup in the future
+  oaiOrg: z.string().trim(), // Kept for potential future use or compatibility, but not used for Pollinations.AI
   oaiHost: z.string().trim(),
   heliKey: z.string().trim(),
   moderationCheck: z.boolean(),
@@ -159,133 +155,19 @@ export const llmOpenAIRouter = createTRPCRouter({
     .output(ListModelsResponse_schema)
     .query(async ({ input: { access } }): Promise<{ models: ModelDescriptionSchema[] }> => {
 
-      let models: ModelDescriptionSchema[];
-
-      // [Azure]: use an older 'deployments' API to enumerate the models, and a modified OpenAI id to description mapping
-      if (access.dialect === 'azure') {
-        const azureOpenAIDeploymentsResponse = await openaiGETOrThrow(access, `/openai/deployments?api-version=2023-03-15-preview`);
-        const azureOpenAIDeployments = azureParseFromDeploymentsAPI(azureOpenAIDeploymentsResponse);
-        models = azureOpenAIDeployments
-          .filter(azureDeploymentFilter)
-          .map(azureDeploymentToModelDescription)
-          .sort(openAISortModels);
-        return { models };
-      }
-
-      // [Perplexity]: there's no API for models listing (upstream: https://docs.perplexity.ai/guides/model-cards)
-      if (access.dialect === 'perplexity') {
-        models = perplexityAIModelDescriptions()
-          .reduce(perplexityInjectVariants, [] as ModelDescriptionSchema[]);
-        return { models };
-      }
-
-      // [xAI]: custom models listing
-      if (access.dialect === 'xai')
-        return { models: (await xaiModelDescriptions(access)).sort(xaiModelSort) };
-
-      // [OpenAI-dialects]: fetch openAI-style for all but Azure (will be then used in each dialect)
-      const openAIWireModelsResponse = await openaiGETOrThrow<OpenAIWire_API_Models_List.Response>(access, '/v1/models');
-
-      // [Together] missing the .data property
-      if (access.dialect === 'togetherai')
-        return { models: togetherAIModelsToModelDescriptions(openAIWireModelsResponse) };
-
-      let openAIModels = openAIWireModelsResponse.data || [];
-
-      // de-duplicate by ids (can happen for local servers.. upstream bugs)
-      const preCount = openAIModels.length;
-      openAIModels = openAIModels.filter((model, index) => openAIModels.findIndex(m => m.id === model.id) === index);
-      if (preCount !== openAIModels.length)
-        console.warn(`openai.router.listModels: removed ${preCount - openAIModels.length} duplicate models for dialect ${access.dialect}`);
-
-      // sort by id
-      openAIModels.sort((a, b) => a.id.localeCompare(b.id));
-
-      // every dialect has a different way to enumerate models - we execute the mapping on the server side
-      switch (access.dialect) {
-
-        case 'alibaba':
-          models = openAIModels
-            .map(({ id, created }) => alibabaModelToModelDescription(id, created))
-            .sort(alibabaModelSort);
-          break;
-
-        case 'deepseek':
-          models = openAIModels
-            .filter(({ id }) => deepseekModelFilter(id))
-            .map(({ id }) => deepseekModelToModelDescription(id))
-            .sort(deepseekModelSort);
-          break;
-
-        case 'groq':
-          models = openAIModels
-            .filter(groqModelFilter)
-            .map(groqModelToModelDescription)
-            .sort(groqModelSortFn);
-          break;
-
-        case 'lmstudio':
-          models = openAIModels
-            .map(({ id }) => lmStudioModelToModelDescription(id));
-          break;
-
-        // [LocalAI]: map id to label
-        case 'localai':
-          models = openAIModels
+      // Handle LocalAI separately
+      if (access.dialect === 'localai') {
+        const openAIWireModelsResponse = await openaiGETOrThrow<OpenAIWire_API_Models_List.Response>(access, '/v1/models');
+        let openAIModels = openAIWireModelsResponse.data || [];
+        return {
+          models: openAIModels
             .map(({ id }) => localAIModelToModelDescription(id))
-            .sort(localAIModelSortFn);
-          break;
-
-        case 'mistral':
-          models = mistralModels(openAIModels);
-          break;
-
-        // [OpenAI]: chat-only models, custom sort, manual mapping
-        case 'openai':
-
-          // [ChutesAI] special case for model enumeration
-          if (chutesAIHeuristic(access.oaiHost))
-            return { models: chutesAIModelsToModelDescriptions(openAIModels) };
-
-          // [FireworksAI] special case for model enumeration
-          if (fireworksAIHeuristic(access.oaiHost))
-            return { models: fireworksAIModelsToModelDescriptions(openAIModels) };
-
-          // [FastChat] make the best of the little info
-          if (fastAPIHeuristic(openAIModels))
-            return { models: fastAPIModels(openAIModels) };
-
-          models = openAIModels
-
-            // limit to only 'gpt' and 'non instruct' models
-            .filter(openAIModelFilter)
-
-            // to model description
-            .map((model): ModelDescriptionSchema => openAIModelToModelDescription(model.id, model.created))
-
-            // custom OpenAI sort
-            .sort(openAISortModels);
-          break;
-
-        case 'openpipe':
-          models = [
-            ...openAIModels.map(openPipeModelToModelDescriptions),
-            ...openPipeModelDescriptions().sort(openPipeModelSort),
-          ];
-          break;
-
-        case 'openrouter':
-          // openRouterStatTokenizers(openAIModels);
-          models = openAIModels
-            .sort(openRouterModelFamilySortFn)
-            .map(openRouterModelToModelDescription)
-            .filter(desc => !!desc)
-            .reduce(openRouterInjectVariants, [] as ModelDescriptionSchema[]);
-          break;
-
+            .sort(localAIModelSortFn),
+        };
       }
 
-      return { models };
+      // For Pollinations.AI, use the hardcoded list (for now)
+      return { models: pollinationsModels() };
     }),
 
 
@@ -490,18 +372,7 @@ export const llmOpenAIRouter = createTRPCRouter({
 });
 
 
-const DEFAULT_ALIBABA_HOST = 'https://dashscope-intl.aliyuncs.com/compatible-mode';
-const DEFAULT_HELICONE_OPENAI_HOST = 'oai.hconeai.com';
-const DEFAULT_DEEPSEEK_HOST = 'https://api.deepseek.com';
-const DEFAULT_GROQ_HOST = 'https://api.groq.com/openai';
-const DEFAULT_LOCALAI_HOST = 'http://127.0.0.1:8080';
-const DEFAULT_MISTRAL_HOST = 'https://api.mistral.ai';
-const DEFAULT_OPENAI_HOST = 'api.openai.com';
-const DEFAULT_OPENPIPE_HOST = 'https://app.openpipe.ai/api';
-const DEFAULT_OPENROUTER_HOST = 'https://openrouter.ai/api';
-const DEFAULT_PERPLEXITY_HOST = 'https://api.perplexity.ai';
-const DEFAULT_TOGETHERAI_HOST = 'https://api.together.xyz';
-const DEFAULT_XAI_HOST = 'https://api.x.ai';
+const DEFAULT_POLLINATIONS_API_HOST = 'https://text.pollinations.ai/openai'; // Default for text/multimodal
 
 
 /**
@@ -524,270 +395,51 @@ function getRandomKeyFromMultiKey(multiKeyString: string): string {
   return multiKeys[Math.floor(Math.random() * multiKeys.length)];
 }
 
+const DEFAULT_LOCALAI_HOST = 'http://127.0.0.1:8080';
+
 export function openAIAccess(access: OpenAIAccessSchema, modelRefId: string | null, apiPath: string): { headers: HeadersInit, url: string } {
-  switch (access.dialect) {
-
-    case 'alibaba':
-      let alibabaOaiKey = access.oaiKey || env.ALIBABA_API_KEY || '';
-      const alibabaOaiHost = fixupHost(access.oaiHost || env.ALIBABA_API_HOST || DEFAULT_ALIBABA_HOST, apiPath);
-
-      // Use function to select a random key if multiple keys are provided
-      alibabaOaiKey = getRandomKeyFromMultiKey(alibabaOaiKey);
-
-      if (!alibabaOaiKey || !alibabaOaiHost)
-        throw new Error('Missing Alibaba API Key. Add it on the UI or server side (your deployment).');
-
-      return {
-        headers: {
-          'Authorization': `Bearer ${alibabaOaiKey}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        url: alibabaOaiHost + apiPath,
-      };
-
-    case 'azure':
-      const azureKey = access.oaiKey || env.AZURE_OPENAI_API_KEY || '';
-      const azureHost = fixupHost(access.oaiHost || env.AZURE_OPENAI_API_ENDPOINT || '', apiPath);
-      if (!azureKey || !azureHost)
-        throw new Error('Missing Azure API Key or Host. Add it on the UI (Models Setup) or server side (your deployment).');
-
-      let url = azureHost;
-      if (apiPath.startsWith('/v1/')) {
-        if (!modelRefId)
-          throw new Error('Azure OpenAI API needs a deployment id');
-        url += `/openai/deployments/${modelRefId}/${apiPath.replace('/v1/', '')}?api-version=2025-02-01-preview`;
-      } else if (apiPath.startsWith('/openai/deployments'))
-        url += apiPath;
-      else
-        throw new Error('Azure OpenAI API path not supported: ' + apiPath);
-
-      return {
-        headers: {
-          'Content-Type': 'application/json',
-          'api-key': azureKey,
-        },
-        url,
-      };
-
-
-    case 'deepseek':
-      // https://platform.deepseek.com/api-docs/
-      let deepseekKey = access.oaiKey || env.DEEPSEEK_API_KEY || '';
-      const deepseekHost = fixupHost(access.oaiHost || DEFAULT_DEEPSEEK_HOST, apiPath);
-
-      // Use function to select a random key if multiple keys are provided
-      deepseekKey = getRandomKeyFromMultiKey(deepseekKey);
-
-      if (!deepseekKey || !deepseekHost)
-        throw new Error('Missing Deepseek API Key or Host. Add it on the UI (Models Setup) or server side (your deployment).');
-
-      return {
-        headers: {
-          'Authorization': `Bearer ${deepseekKey}`,
-          'Content-Type': 'application/json',
-        },
-        url: deepseekHost + apiPath,
-      };
-
-
-    case 'lmstudio':
-    case 'openai':
-      const oaiKey = access.oaiKey || env.OPENAI_API_KEY || '';
-      const oaiOrg = access.oaiOrg || env.OPENAI_API_ORG_ID || '';
-      let oaiHost = fixupHost(access.oaiHost || env.OPENAI_API_HOST || DEFAULT_OPENAI_HOST, apiPath);
-      // warn if no key - only for default (non-overridden) hosts
-      if (!oaiKey && oaiHost.indexOf(DEFAULT_OPENAI_HOST) !== -1)
-        throw new Error('Missing OpenAI API Key. Add it on the UI or server side (your deployment).');
-
-      // [Helicone]
-      // We don't change the host (as we do on Anthropic's), as we expect the user to have a custom host.
-      let heliKey = access.heliKey || env.HELICONE_API_KEY || false;
-      if (heliKey) {
-        if (oaiHost.includes(DEFAULT_OPENAI_HOST)) {
-          oaiHost = `https://${DEFAULT_HELICONE_OPENAI_HOST}`;
-        } else if (!oaiHost.includes(DEFAULT_HELICONE_OPENAI_HOST)) {
-          // throw new Error(`The Helicone OpenAI Key has been provided, but the host is not set to https://${DEFAULT_HELICONE_OPENAI_HOST}. Please fix it in the Models Setup page.`);
-          heliKey = false;
-        }
-      }
-
-      // [Cloudflare OpenAI AI Gateway support]
-      // Adapts the API path when using a 'universal' or 'openai' Cloudflare AI Gateway endpoint in the "API Host" field
-      if (oaiHost.includes('https://gateway.ai.cloudflare.com')) {
-        const parsedUrl = new URL(oaiHost);
-        const pathSegments = parsedUrl.pathname.split('/').filter(segment => segment.length > 0);
-
-        // The expected path should be: /v1/<ACCOUNT_TAG>/<GATEWAY_URL_SLUG>/<PROVIDER_ENDPOINT>
-        if (pathSegments.length < 3 || pathSegments.length > 4 || pathSegments[0] !== 'v1')
-          throw new Error('Cloudflare AI Gateway API Host is not valid. Please check the API Host field in the Models Setup page.');
-
-        const [_v1, accountTag, gatewayName, provider] = pathSegments;
-        if (provider && provider !== 'openai')
-          throw new Error('Cloudflare AI Gateway only supports OpenAI as a provider.');
-
-        if (apiPath.startsWith('/v1'))
-          apiPath = apiPath.replace('/v1', '');
-
-        oaiHost = 'https://gateway.ai.cloudflare.com';
-        apiPath = `/v1/${accountTag}/${gatewayName}/${provider || 'openai'}${apiPath}`;
-      }
-
-      return {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(oaiKey && { Authorization: `Bearer ${oaiKey}` }),
-          ...(oaiOrg && { 'OpenAI-Organization': oaiOrg }),
-          ...(heliKey && { 'Helicone-Auth': `Bearer ${heliKey}` }),
-        },
-        url: oaiHost + apiPath,
-      };
-
-    case 'groq':
-      let groqKey = access.oaiKey || env.GROQ_API_KEY || '';
-      const groqHost = fixupHost(access.oaiHost || DEFAULT_GROQ_HOST, apiPath);
-
-      // Use function to select a random key if multiple keys are provided
-      groqKey = getRandomKeyFromMultiKey(groqKey);
-
-      if (!groqKey)
-        throw new Error('Missing Groq API Key. Add it on the UI (Models Setup) or server side (your deployment).');
-
-      return {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${groqKey}`,
-        },
-        url: groqHost + apiPath,
-      };
-
-
-    case 'localai':
-      const localAIKey = access.oaiKey || env.LOCALAI_API_KEY || '';
-      let localAIHost = fixupHost(access.oaiHost || env.LOCALAI_API_HOST || DEFAULT_LOCALAI_HOST, apiPath);
-      return {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(localAIKey && { Authorization: `Bearer ${localAIKey}` }),
-        },
-        url: localAIHost + apiPath,
-      };
-
-
-    case 'mistral':
-      // https://docs.mistral.ai/platform/client
-      let mistralKey = access.oaiKey || env.MISTRAL_API_KEY || '';
-      const mistralHost = fixupHost(access.oaiHost || DEFAULT_MISTRAL_HOST, apiPath);
-
-      // Use function to select a random key if multiple keys are provided
-      mistralKey = getRandomKeyFromMultiKey(mistralKey);
-
-      return {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${mistralKey}`,
-        },
-        url: mistralHost + apiPath,
-      };
-
-
-    case 'openpipe':
-      const openPipeKey = access.oaiKey || env.OPENPIPE_API_KEY || '';
-      if (!openPipeKey)
-        throw new Error('Missing OpenPipe API Key or Host. Add it on the UI or server side (your deployment).');
-
-      return {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openPipeKey}`,
-          'op-log-request': 'true',
-          ...(access.oaiOrg && { 'op-tags': access.oaiOrg }),
-        },
-        url: fixupHost(DEFAULT_OPENPIPE_HOST, apiPath) + apiPath,
-      };
-
-    case 'openrouter':
-      let orKey = access.oaiKey || env.OPENROUTER_API_KEY || '';
-      const orHost = fixupHost(access.oaiHost || DEFAULT_OPENROUTER_HOST, apiPath);
-
-      // Use function to select a random key if multiple keys are provided
-      orKey = getRandomKeyFromMultiKey(orKey);
-
-      if (!orKey || !orHost)
-        throw new Error('Missing OpenRouter API Key or Host. Add it on the UI or server side (your deployment).');
-
-      return {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${orKey}`,
-          'HTTP-Referer': Brand.URIs.Home,
-          'X-Title': Brand.Title.Base,
-        },
-        url: orHost + apiPath,
-      };
-
-    case 'perplexity':
-      let perplexityKey = access.oaiKey || env.PERPLEXITY_API_KEY || '';
-      const perplexityHost = fixupHost(access.oaiHost || DEFAULT_PERPLEXITY_HOST, apiPath);
-
-      // Use function to select a random key if multiple keys are provided
-      perplexityKey = getRandomKeyFromMultiKey(perplexityKey);
-
-      if (!perplexityKey || !perplexityHost)
-        throw new Error('Missing Perplexity API Key or Host. Add it on the UI (Models Setup) or server side (your deployment).');
-
-      if (apiPath.startsWith('/v1'))
-        apiPath = apiPath.replace('/v1', '');
-
-      return {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${perplexityKey}`,
-        },
-        url: perplexityHost + apiPath,
-      };
-
-
-    case 'togetherai':
-      let togetherKey = access.oaiKey || env.TOGETHERAI_API_KEY || '';
-      const togetherHost = fixupHost(access.oaiHost || DEFAULT_TOGETHERAI_HOST, apiPath);
-
-      // Use function to select a random key if multiple keys are provided
-      togetherKey = getRandomKeyFromMultiKey(togetherKey);
-
-      if (!togetherKey || !togetherHost)
-        throw new Error('Missing TogetherAI API Key or Host. Add it on the UI (Models Setup) or server side (your deployment).');
-
-      return {
-        headers: {
-          'Authorization': `Bearer ${togetherKey}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        url: togetherHost + apiPath,
-      };
-
-
-    case 'xai':
-      let xaiKey = access.oaiKey || env.XAI_API_KEY || '';
-
-      // Use function to select a random key if multiple keys are provided
-      xaiKey = getRandomKeyFromMultiKey(xaiKey);
-
-      if (!xaiKey)
-        throw new Error('Missing xAI API Key. Add it on the UI (Models Setup) or server side (your deployment).');
-      return {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${xaiKey}`,
-        },
-        url: DEFAULT_XAI_HOST + apiPath,
-      };
-
+  // Handle LocalAI separately
+  if (access.dialect === 'localai') {
+    const localAIKey = access.oaiKey || env.LOCALAI_API_KEY || '';
+    const localAIHost = fixupHost(access.oaiHost || env.LOCALAI_API_HOST || DEFAULT_LOCALAI_HOST, apiPath);
+    return {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localAIKey && { Authorization: `Bearer ${localAIKey}` }),
+      },
+      url: localAIHost + apiPath,
+    };
   }
+
+  // For all other dialects, use Pollinations.AI
+  const pollKey = access.oaiKey || env.POLLINATIONS_API_KEY || '';
+  let pollHost: string;
+
+  // Determine host based on API path (image generation vs text/multimodal)
+  if (apiPath.startsWith('/v1/images/generations') || apiPath.startsWith('/v1/images/edits')) {
+    pollHost = fixupHost(access.oaiHost || env.POLLINATIONS_API_HOST?.replace('/openai', '') || 'https://image.pollinations.ai', apiPath);
+  } else {
+    // Default to text/multimodal endpoint for other API paths (chat, models, etc.)
+    pollHost = fixupHost(access.oaiHost || env.POLLINATIONS_API_HOST || DEFAULT_POLLINATIONS_API_HOST, apiPath);
+  }
+
+  // Add Referrer header
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Referrer': Brand.URIs.Home,
+    ...(pollKey && { Authorization: `Bearer ${pollKey}` }),
+  };
+
+  // [Cloudflare AI Gateway support] - Log a warning if Cloudflare host is used with Pollinations
+  if (pollHost.includes('https://gateway.ai.cloudflare.com')) {
+    console.warn(`Cloudflare AI Gateway host "${pollHost}" provided with Pollinations.AI access. Ensure it is configured to proxy correctly.`);
+  }
+
+  return {
+    headers,
+    url: pollHost + apiPath,
+  };
 }
 
 

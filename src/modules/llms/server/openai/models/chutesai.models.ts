@@ -1,5 +1,3 @@
-import * as z from 'zod/v4';
-
 import { DModelInterfaceV1, LLM_IF_OAI_Chat, LLM_IF_OAI_Fn, LLM_IF_OAI_Vision } from '~/common/stores/llms/llms.types';
 
 import { serverCapitalizeFirstLetter } from '~/server/wire';
@@ -7,26 +5,7 @@ import { serverCapitalizeFirstLetter } from '~/server/wire';
 import type { ModelDescriptionSchema } from '../../llm.server.types';
 
 import { fromManualMapping, ManualMappings } from './models.data';
-
-
-export function chutesAIHeuristic(hostname: string) {
-  return hostname.includes('.chutes.ai');
-}
-
-
-const _wireChutesAIListOutputSchema = z.array(z.object({
-
-  id: z.string(),
-  object: z.literal('model'),
-  created: z.number(),
-  owned_by: z.string().optional().nullable(),
-  root: z.string().optional().nullable(),
-
-  // ChutesAI specific field for context length
-  max_model_len: z.number().optional().nullable(),
-
-  // Optional fields that may be present
-  parent: z.string().nullable().optional(),
+import type { PollinationsaiWire_API_Models_List } from '~/modules/pollinationsai/server/pollinationsai.wiretypes';
   // permission: z.array(z.object({
   //   id: z.string(),
   //   object: z.literal('model_permission'),
@@ -41,8 +20,6 @@ const _wireChutesAIListOutputSchema = z.array(z.object({
   //   group: z.string().nullable(),
   //   is_blocking: z.boolean(),
   // })).optional(),
-}));
-
 const _chutesKnownModels: ManualMappings = [
   // NOTE: we don't need manual patching as we have enough info for now
 ] as const;
@@ -74,16 +51,15 @@ function _prettyModelId(id: string): string {
 }
 
 
-export function chutesAIModelsToModelDescriptions(wireModels: unknown): ModelDescriptionSchema[] {
-  return _wireChutesAIListOutputSchema.parse(wireModels)
+export function chutesAIModelsToModelDescriptions(wireModels: PollinationsaiWire_API_Models_List.Model[]): ModelDescriptionSchema[] {
+  return wireModels
 
     .filter((model) => {
       return !_chutesDenyListContains.some(contains => model.id.includes(contains));
     })
 
     .map((model): ModelDescriptionSchema => {
-
-      // heuristics
+      // This mapping is adapted for Pollinations.AI's model structure
       const label = _prettyModelId(model.id);
       const description = model.owned_by ? `${serverCapitalizeFirstLetter(model.owned_by)} model via ChutesAI.` : 'Model via ChutesAI.';
 
@@ -91,18 +67,10 @@ export function chutesAIModelsToModelDescriptions(wireModels: unknown): ModelDes
       const contextWindow = model.max_model_len || 8192;
 
       const interfaces: DModelInterfaceV1[] = [
-        LLM_IF_OAI_Chat, // Assume all are chat models
-        LLM_IF_OAI_Vision, // Assume we can send them
-        LLM_IF_OAI_Fn, // Most models support function calling
+        LLM_IF_OAI_Chat,
+        LLM_IF_OAI_Vision,
+        LLM_IF_OAI_Fn,
       ];
-
-      // Check for vision capabilities based on model name patterns
-      // if (model.id.toLowerCase().includes('vision') || model.id.toLowerCase().includes('vl')) {
-      //   interfaces.push(LLM_IF_OAI_Vision);
-      // }
-
-      // Most modern models support function calling
-      // interfaces.push(LLM_IF_OAI_Fn);
 
       return fromManualMapping(_chutesKnownModels, model.id, model.created, undefined, {
         idPrefix: model.id,

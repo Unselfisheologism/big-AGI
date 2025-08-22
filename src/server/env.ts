@@ -17,61 +17,13 @@ export const env = createEnv({
     MDB_URI: z.string().optional(),
 
 
-    // LLM: OpenAI
-    OPENAI_API_KEY: z.string().optional(),
-    OPENAI_API_HOST: z.url().optional(),
-    OPENAI_API_ORG_ID: z.string().optional(),
-
-    // LLM: Alibaba (OpenAI)
-    ALIBABA_API_HOST: z.url().optional(),
-    ALIBABA_API_KEY: z.string().optional(),
-
-    // LLM: Azure OpenAI
-    AZURE_OPENAI_API_ENDPOINT: z.url().optional(),
-    AZURE_OPENAI_API_KEY: z.string().optional(),
-
-    // LLM: Anthropic
-    ANTHROPIC_API_KEY: z.string().optional(),
-    ANTHROPIC_API_HOST: z.url().optional(),
-
-    // LLM: Deepseek AI
-    DEEPSEEK_API_KEY: z.string().optional(),
-
-    // LLM: Google AI's Gemini
-    GEMINI_API_KEY: z.string().optional(),
-
-    // LLM: Groq
-    GROQ_API_KEY: z.string().optional(),
-
     // LLM: LocalAI
     LOCALAI_API_HOST: z.url().optional(),
     LOCALAI_API_KEY: z.string().optional(),
 
-    // LLM: Mistral
-    MISTRAL_API_KEY: z.string().optional(),
-
-    // LLM: Ollama
-    OLLAMA_API_HOST: z.url().optional(),
-
-    // LLM: OpenPipe
-    OPENPIPE_API_KEY: z.string().optional(),
-
-    // LLM: OpenRouter
-    OPENROUTER_API_KEY: z.string().optional(),
-
-    // LLM: Perplexity
-    PERPLEXITY_API_KEY: z.string().optional(),
-
-    // LLM: Together AI
-    TOGETHERAI_API_KEY: z.string().optional(),
-
-    // LLM: xAI
-    XAI_API_KEY: z.string().optional(),
-
-
-    // Helicone - works on both OpenAI and Anthropic vendors
-    HELICONE_API_KEY: z.string().optional(),
-
+    // LLM: Pollinations.AI (replaces many providers with one API)
+    POLLINATIONS_API_KEY: z.string().optional(),
+    POLLINATIONS_API_HOST: z.url().optional(),
 
     // Browsing Service
     PUPPETEER_WSS_ENDPOINT: z.url().optional(),
