@@ -5,7 +5,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import type { DOpenRouterServiceSettings } from '~/modules/llms/vendors/openrouter/openrouter.vendor';
 import type { IModelVendor } from '~/modules/llms/vendors/IModelVendor';
 import type { ModelVendorId } from '~/modules/llms/vendors/vendors.registry';
 
@@ -46,9 +45,6 @@ interface LlmsRootActions {
   updateServiceSettings: <TServiceSettings>(id: DModelsServiceId, partialSettings: Partial<TServiceSettings>) => void;
 
   setConfServiceId: (id: DModelsServiceId | null) => void;
-
-  // special
-  setOpenRouterKey: (key: string) => void;
 
 }
 
@@ -226,18 +222,6 @@ export const useModelsStore = create<LlmsStore>()(persist(
 
     setConfServiceId: (id: DModelsServiceId | null) =>
       set({ confServiceId: id }),
-
-    setOpenRouterKey: (key: string) =>
-      set(state => {
-        const firstOpenRouterService = state.sources.find(s => s.vId === 'openrouter');
-        return !firstOpenRouterService ? state : {
-          sources: state.sources.map((s: DModelsService): DModelsService =>
-            s.id === firstOpenRouterService.id
-              ? { ...s, setup: { ...s.setup, oaiKey: key satisfies DOpenRouterServiceSettings['oaiKey'] } }
-              : s,
-          ),
-        };
-      }),
 
   }),
   {
