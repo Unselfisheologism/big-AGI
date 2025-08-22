@@ -48,22 +48,24 @@ export const backendRouter = createTRPCRouter({
     .query(async ({ ctx: _unused }): Promise<BackendCapabilities> => {
       return {
         // llms
-        hasLlmAlibaba: !!env.ALIBABA_API_KEY || !!env.ALIBABA_API_HOST,
-        hasLlmAnthropic: !!env.ANTHROPIC_API_KEY,
-        hasLlmAzureOpenAI: !!env.AZURE_OPENAI_API_KEY && !!env.AZURE_OPENAI_API_ENDPOINT,
-        hasLlmDeepseek: !!env.DEEPSEEK_API_KEY,
-        hasLlmGemini: !!env.GEMINI_API_KEY,
-        hasLlmGroq: !!env.GROQ_API_KEY,
         hasLlmLocalAIHost: !!env.LOCALAI_API_HOST,
         hasLlmLocalAIKey: !!env.LOCALAI_API_KEY,
-        hasLlmMistral: !!env.MISTRAL_API_KEY,
-        hasLlmOllama: !!env.OLLAMA_API_HOST,
-        hasLlmOpenAI: !!env.OPENAI_API_KEY || !!env.OPENAI_API_HOST,
-        hasLlmOpenPipe: !!env.OPENPIPE_API_KEY,
-        hasLlmOpenRouter: !!env.OPENROUTER_API_KEY,
-        hasLlmPerplexity: !!env.PERPLEXITY_API_KEY,
-        hasLlmTogetherAI: !!env.TOGETHERAI_API_KEY,
-        hasLlmXAI: !!env.XAI_API_KEY,
+        hasLlmPollinations: !!env.POLLINATIONS_API_KEY || !!env.POLLINATIONS_API_HOST,
+        // Explicitly set other providers to false as they are not directly used
+        hasLlmAlibaba: false,
+        hasLlmAnthropic: false,
+        hasLlmAzureOpenAI: false,
+        hasLlmDeepseek: false,
+        hasLlmGemini: false,
+        hasLlmGroq: false,
+        hasLlmMistral: false,
+        hasLlmOllama: false,
+        hasLlmOpenAI: false, // This was likely the original OpenAI provider
+        hasLlmOpenPipe: false,
+        hasLlmOpenRouter: false,
+        hasLlmPerplexity: false,
+        hasLlmTogetherAI: false,
+        hasLlmXAI: false,
         // others
         hasDB: (!!env.MDB_URI) || (!!env.POSTGRES_PRISMA_URL && !!env.POSTGRES_URL_NON_POOLING),
         hasBrowsing: !!env.PUPPETEER_WSS_ENDPOINT,
