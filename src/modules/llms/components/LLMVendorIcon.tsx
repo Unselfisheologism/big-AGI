@@ -49,6 +49,7 @@ const vendorIcons: Record<ModelVendorId, React.FunctionComponent<SvgIconProps>> 
   perplexity: PerplexityIcon,
   togetherai: TogetherIcon,
   xai: XAIIcon,
+  'pollinations.ai': PhRobot, // Add Pollinations.ai icon (using PhRobot as placeholder)
 };
 
 
