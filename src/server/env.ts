@@ -21,6 +21,9 @@ export const env = createEnv({
     LOCALAI_API_HOST: z.url().optional(),
     LOCALAI_API_KEY: z.string().optional(),
 
+    // LLM: Ollama - ollama.router.ts
+    OLLAMA_API_HOST: z.url().optional(),
+
     // LLM: Pollinations.AI (replaces many providers with one API)
     POLLINATIONS_API_KEY: z.string().optional(),
     POLLINATIONS_API_HOST: z.url().optional(),
