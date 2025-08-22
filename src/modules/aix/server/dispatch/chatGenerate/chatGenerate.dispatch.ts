@@ -1,5 +1,3 @@
-import { anthropicAccess } from '~/modules/llms/server/anthropic/anthropic.router';
-import { geminiAccess } from '~/modules/llms/server/gemini/gemini.router';
 import { ollamaAccess } from '~/modules/llms/server/ollama/ollama.router';
 import { openAIAccess } from '~/modules/llms/server/openai/openai.router';
 
@@ -36,30 +34,7 @@ export function createChatGenerateDispatch(access: AixAPI_Access, model: AixAPI_
 } {
 
   switch (access.dialect) {
-    case 'anthropic':
-      return {
-        request: {
-          ...anthropicAccess(access, model.id, '/v1/messages'),
-          body: aixToAnthropicMessageCreate(model, chatGenerate, streaming),
-        },
-        demuxerFormat: streaming ? 'fast-sse' : null,
-        chatGenerateParse: streaming ? createAnthropicMessageParser() : createAnthropicMessageParserNS(),
-      };
-
-    case 'gemini':
-      /**
-       * [Gemini, 2025-04-17] For newer thinking parameters, use v1alpha (we only see statistically better results)
-       */
-      const useV1Alpha = !!model.vndGeminiShowThoughts || model.vndGeminiThinkingBudget !== undefined;
-      return {
-        request: {
-          ...geminiAccess(access, model.id, streaming ? GeminiWire_API_Generate_Content.streamingPostPath : GeminiWire_API_Generate_Content.postPath, useV1Alpha),
-          body: aixToGeminiGenerateContent(model, chatGenerate, access.minSafetyLevel, false, streaming),
-        },
-        // we verified that 'fast-sse' works well with Gemini
-        demuxerFormat: streaming ? 'fast-sse' : null,
-        chatGenerateParse: createGeminiGenerateContentResponseParser(model.id.replace('models/', ''), streaming),
-      };
+    
 
     /**
      * Ollama has now an OpenAI compability layer for `chatGenerate` API, but still its own protocol for models listing.
