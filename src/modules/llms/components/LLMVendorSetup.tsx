@@ -6,22 +6,8 @@ import { findModelVendor, ModelVendorId } from '../vendors/vendors.registry';
 
 
 // direct imports for all vendor setup components - NOTE: we could lazy load if this becomes a performance issue
-import { AlibabaServiceSetup } from '../vendors/alibaba/AlibabaServiceSetup';
-import { AnthropicServiceSetup } from '../vendors/anthropic/AnthropicServiceSetup';
-import { AzureServiceSetup } from '../vendors/azure/AzureServiceSetup';
-import { DeepseekAIServiceSetup } from '../vendors/deepseek/DeepseekAIServiceSetup';
-import { GeminiServiceSetup } from '../vendors/gemini/GeminiServiceSetup';
-import { GroqServiceSetup } from '../vendors/groq/GroqServiceSetup';
-import { LMStudioServiceSetup } from '../vendors/lmstudio/LMStudioServiceSetup';
 import { LocalAIServiceSetup } from '../vendors/localai/LocalAIServiceSetup';
-import { MistralServiceSetup } from '../vendors/mistral/MistralServiceSetup';
-import { OllamaServiceSetup } from '../vendors/ollama/OllamaServiceSetup';
-import { OpenAIServiceSetup } from '../vendors/openai/OpenAIServiceSetup';
-import { OpenPipeServiceSetup } from '../vendors/openpipe/OpenPipeServiceSetup';
-import { OpenRouterServiceSetup } from '../vendors/openrouter/OpenRouterServiceSetup';
-import { PerplexityServiceSetup } from '../vendors/perplexity/PerplexityServiceSetup';
-import { TogetherAIServiceSetup } from '../vendors/togetherai/TogetherAIServiceSetup';
-import { XAIServiceSetup } from '../vendors/xai/XAIServiceSetup';
+import { PollinationsAIServiceSetup } from '../vendors/pollinationsai/PollinationsAIServiceSetup';
 
 
 /**
@@ -30,22 +16,26 @@ import { XAIServiceSetup } from '../vendors/xai/XAIServiceSetup';
  *       code on vendor definitions (which must be lightweight as it impacts boot time).
  */
 const vendorSetupComponents: Record<ModelVendorId, React.ComponentType<{ serviceId: DModelsServiceId }>> = {
-  alibaba: AlibabaServiceSetup,
-  anthropic: AnthropicServiceSetup,
-  azure: AzureServiceSetup,
-  deepseek: DeepseekAIServiceSetup,
-  googleai: GeminiServiceSetup,
-  groq: GroqServiceSetup,
-  lmstudio: LMStudioServiceSetup,
+  // Keep LocalAI
   localai: LocalAIServiceSetup,
-  mistral: MistralServiceSetup,
-  ollama: OllamaServiceSetup,
-  openai: OpenAIServiceSetup,
-  openpipe: OpenPipeServiceSetup,
-  openrouter: OpenRouterServiceSetup,
-  perplexity: PerplexityServiceSetup,
-  togetherai: TogetherAIServiceSetup,
-  xai: XAIServiceSetup,
+
+  // Map all other providers to PollinationsAIServiceSetup
+  alibaba: PollinationsAIServiceSetup,
+  anthropic: PollinationsAIServiceSetup,
+  azure: PollinationsAIServiceSetup,
+  deepseek: PollinationsAIServiceSetup,
+  googleai: PollinationsAIServiceSetup,
+  groq: PollinationsAIServiceSetup,
+  lmstudio: PollinationsAIServiceSetup,
+  mistral: PollinationsAIServiceSetup,
+  ollama: PollinationsAIServiceSetup,
+  openai: PollinationsAIServiceSetup, // Keep OpenAI in the map, but route to Pollinations
+  openpipe: PollinationsAIServiceSetup,
+  openrouter: PollinationsAIServiceSetup,
+  perplexity: PollinationsAIServiceSetup,
+  togetherai: PollinationsAIServiceSetup,
+  xai: PollinationsAIServiceSetup, // Add the new Pollinations.ai vendor ID
+  'pollinations.ai': PollinationsAIServiceSetup,
 } as const;
 
 

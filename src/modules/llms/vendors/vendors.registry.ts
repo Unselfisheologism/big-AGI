@@ -1,19 +1,6 @@
-import { ModelVendorAlibaba } from './alibaba/alibaba.vendor';
-import { ModelVendorAnthropic } from './anthropic/anthropic.vendor';
-import { ModelVendorAzure } from './azure/azure.vendor';
-import { ModelVendorDeepseek } from './deepseek/deepseekai.vendor';
-import { ModelVendorGemini } from './gemini/gemini.vendor';
-import { ModelVendorGroq } from './groq/groq.vendor';
-import { ModelVendorLMStudio } from './lmstudio/lmstudio.vendor';
 import { ModelVendorLocalAI } from './localai/localai.vendor';
-import { ModelVendorMistral } from './mistral/mistral.vendor';
 import { ModelVendorOllama } from './ollama/ollama.vendor';
 import { ModelVendorOpenAI } from './openai/openai.vendor';
-import { ModelVendorOpenPipe } from './openpipe/openpipe.vendor';
-import { ModelVendorOpenRouter } from './openrouter/openrouter.vendor';
-import { ModelVendorPerplexity } from './perplexity/perplexity.vendor';
-import { ModelVendorTogetherAI } from './togetherai/togetherai.vendor';
-import { ModelVendorXAI } from './xai/xai.vendor';
 
 import type { IModelVendor } from './IModelVendor';
 
@@ -33,28 +20,17 @@ export type ModelVendorId =
   | 'openpipe'
   | 'openrouter'
   | 'perplexity'
+  | 'pollinations.ai'
   | 'togetherai'
   | 'xai'
   ;
 
 /** Global: Vendor Instances Registry **/
 const MODEL_VENDOR_REGISTRY: Record<ModelVendorId, IModelVendor> = {
-  alibaba: ModelVendorAlibaba,
-  anthropic: ModelVendorAnthropic,
-  azure: ModelVendorAzure,
-  deepseek: ModelVendorDeepseek,
-  googleai: ModelVendorGemini,
-  groq: ModelVendorGroq,
-  lmstudio: ModelVendorLMStudio,
   localai: ModelVendorLocalAI,
-  mistral: ModelVendorMistral,
   ollama: ModelVendorOllama,
   openai: ModelVendorOpenAI,
-  openpipe: ModelVendorOpenPipe,
-  openrouter: ModelVendorOpenRouter,
-  perplexity: ModelVendorPerplexity,
-  togetherai: ModelVendorTogetherAI,
-  xai: ModelVendorXAI,
+  'pollinations.ai': {} as IModelVendor, // Placeholder: Pollinations.ai doesn't have a dedicated vendor object in this registry yet
 } as Record<string, IModelVendor>;
 
 
