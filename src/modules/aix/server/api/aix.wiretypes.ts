@@ -3,8 +3,6 @@ import * as z from 'zod/v4';
 // Used to align Particles to the Typescript definitions from the frontend-side, on 'chat.fragments.ts'
 import type { DMessageToolResponsePart } from '~/common/stores/chat/chat.fragments';
 
-
-import { ollamaAccessSchema } from '~/modules/llms/server/ollama/ollama.router';
 import { openAIAccessSchema } from '~/modules/llms/server/openai/openai.router';
 
 
@@ -387,7 +385,6 @@ export namespace AixWire_API {
   /// Access
 
   export const Access_schema = z.discriminatedUnion('dialect', [
-    ollamaAccessSchema,
     openAIAccessSchema,
   ]);
 
