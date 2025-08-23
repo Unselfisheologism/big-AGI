@@ -32,6 +32,9 @@ export const openAIAccessSchema = z.object({
   oaiHost: z.string().trim(),
   heliKey: z.string().trim(),
   moderationCheck: z.boolean(),
+  pollinationsAIApiKey: z.string().trim().optional(),
+  pollinationsAIApiHost: z.string().trim().optional(),
+
 });
 export type OpenAIAccessSchema = z.infer<typeof openAIAccessSchema>;
 

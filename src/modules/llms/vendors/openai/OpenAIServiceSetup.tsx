@@ -6,7 +6,6 @@ import type { DModelsServiceId } from '~/common/stores/llms/llms.service.types';
 import { AlreadySet } from '~/common/components/AlreadySet';
 import { Brand } from '~/common/app.config';
 import { FormInputKey } from '~/common/components/forms/FormInputKey';
-import { FormSwitchControl } from '~/common/components/forms/FormSwitchControl';
 import { FormTextField } from '~/common/components/forms/FormTextField';
 import { InlineError } from '~/common/components/InlineError';
 import { Link } from '~/common/components/Link';
@@ -15,99 +14,62 @@ import { useToggleableBoolean } from '~/common/util/hooks/useToggleableBoolean';
 
 import { ApproximateCosts } from '../ApproximateCosts';
 import { useLlmUpdateModels } from '../../llm.client.hooks';
+import type { OpenAIAccessSchema } from '../../server/openai/openai.router'; // Import OpenAIAccessSchema
 import { useServiceSetup } from '../useServiceSetup';
 
-import { ModelVendorOpenAI } from './openai.vendor';
+import { ModelVendorPollinationsAI, type DPollinationsAIAccess } from './openai.vendor';
 
 
-// avoid repeating it all over
-const HELICONE_OPENAI_HOST = 'oai.hconeai.com';
+// NOTE: This file was renamed from OpenAIServiceSetup.tsx to PollinationsAIServiceSetup.tsx
 
-
-export function OpenAIServiceSetup(props: { serviceId: DModelsServiceId }) {
-
+export function PollinationsAIServiceSetup(props: { serviceId: DModelsServiceId }) {
   // state
   const advanced = useToggleableBoolean(!!props.serviceId?.includes('-'));
 
   // external state
   const { service, serviceAccess, serviceHasCloudTenantConfig, serviceHasLLMs, updateSettings } =
-    useServiceSetup(props.serviceId, ModelVendorOpenAI);
+ useServiceSetup<DPollinationsAIAccess, OpenAIAccessSchema>(props.serviceId, ModelVendorPollinationsAI);
+
+  // Check if the current configuration is likely for Pollinations.ai based on the host
+  // const isPollinationsAI = serviceAccess.pollinationsAIApiHost?.includes('pollinations.ai'); // Not needed with dedicated vendor
 
   // derived state
-  const { oaiKey, oaiOrg, oaiHost, heliKey, moderationCheck } = serviceAccess;
-  const needsUserKey = !serviceHasCloudTenantConfig;
+  const { pollinationsAIApiKey, pollinationsAIApiHost } = serviceAccess;
+  const needsUserKey = !serviceHasCloudTenantConfig; // Assuming Pollinations.ai can have cloud-set keys too
 
-  const keyValid = true; //isValidOpenAIApiKey(oaiKey);
-  const keyError = (/*needsUserKey ||*/ !!oaiKey) && !keyValid;
-  const shallFetchSucceed = oaiKey ? keyValid : !needsUserKey;
+  const keyValid = true; // No specific key validation needed for Pollinations.ai
+  const keyError = (/*needsUserKey ||*/ !!pollinationsAIApiKey) && !keyValid;
+  const shallFetchSucceed = pollinationsAIApiKey ? keyValid : !needsUserKey; // Fetch succeeds if user key is provided or no user key is needed
 
   // fetch models
-  const { isFetching, refetch, isError, error } =
-    useLlmUpdateModels(!serviceHasLLMs && shallFetchSucceed, service);
+  const { isFetching, refetch, isError, error } = useLlmUpdateModels(!serviceHasLLMs && shallFetchSucceed, service);
+
 
   return <>
 
     <ApproximateCosts serviceId={service?.id} />
 
     <FormInputKey
-      autoCompleteId='openai-key' label='API Key'
-      rightLabel={<>{needsUserKey
-        ? !oaiKey && <Link level='body-sm' href='https://platform.openai.com/account/api-keys' target='_blank'>create key</Link>
-        : <AlreadySet />
-      } {oaiKey && keyValid && <Link level='body-sm' href='https://platform.openai.com/account/usage' target='_blank'>check usage</Link>}
+      autoCompleteId='pollinationsai-api-key'
+      label='API Token (Optional)'
+      rightLabel={<>{pollinationsAIApiKey && <Link level='body-sm' href='https://pollinations.ai/APIDOCS.md#authentication--tiers-🔑' target='_blank'>check tiers & usage</Link>}
+        {!pollinationsAIApiKey && needsUserKey && <Link level='body-sm' href='https://auth.pollinations.ai' target='_blank'>get token/register referrer</Link>}
+        {!pollinationsAIApiKey && !needsUserKey && <AlreadySet />}
       </>}
-      value={oaiKey} onChange={value => updateSettings({ oaiKey: value })}
-      required={needsUserKey} isError={keyError}
-      placeholder='sk-...'
+      value={pollinationsAIApiKey || ''} // Use empty string for controlled component
+      onChange={value => updateSettings({ pollinationsAIApiKey: value })}
+      required={false} // API key is optional for basic use in Pollinations.AI
+      isError={keyError}
+      placeholder='Enter Pollinations.AI API Token (optional)'
     />
 
     {advanced.on && <FormTextField
-      autoCompleteId='openai-host'
+      autoCompleteId='pollinationsai-api-host'
       title='API Endpoint'
-      tooltip={`An OpenAI compatible endpoint to be used in place of 'api.openai.com'.\n\nCould be used for Helicone, Cloudflare, or other OpenAI compatible cloud or local services.\n\nExamples:\n - ${HELICONE_OPENAI_HOST}\n - localhost:1234`}
-      description={<><Link level='body-sm' href='https://www.helicone.ai' target='_blank'>Helicone</Link>, <Link level='body-sm' href='https://developers.cloudflare.com/ai-gateway/' target='_blank'>Cloudflare</Link></>}
-      placeholder={`e.g., ${HELICONE_OPENAI_HOST}, https://gateway.ai.cloudflare.com/v1/<ACCOUNT_TAG>/<GATEWAY_URL_SLUG>/openai, etc..`}
-      value={oaiHost}
-      onChange={text => updateSettings({ oaiHost: text })}
+      placeholder='Optional, defaults to https://text.pollinations.ai'
+      value={pollinationsAIApiHost || ''}
+      onChange={text => updateSettings({ pollinationsAIApiHost: text })}
     />}
-
-    {advanced.on && <FormTextField
-      autoCompleteId='openai-org'
-      title='Organization ID'
-      description={<Link level='body-sm' href={Brand.URIs.OpenRepo + '/issues/63'} target='_blank'>What is this</Link>}
-      placeholder='Optional, for enterprise users'
-      value={oaiOrg}
-      onChange={text => updateSettings({ oaiOrg: text })}
-    />}
-
-    {advanced.on && <FormTextField
-      autoCompleteId='openai-helicone-key'
-      title='Helicone Key'
-      description={<>Generate <Link level='body-sm' href='https://www.helicone.ai/keys' target='_blank'>here</Link></>}
-      placeholder='sk-...'
-      value={heliKey}
-      onChange={text => updateSettings({ heliKey: text })}
-    />}
-
-    {!!heliKey && <Alert variant='soft' color={oaiHost?.includes(HELICONE_OPENAI_HOST) ? 'success' : 'warning'}>
-      Advanced: You set the Helicone key. {!oaiHost?.includes(HELICONE_OPENAI_HOST)
-      ? `But you also need to set the OpenAI Host to ${HELICONE_OPENAI_HOST} to use Helicone.`
-      : 'OpenAI traffic will now be routed through Helicone.'}
-    </Alert>}
-
-    {advanced.on && <FormSwitchControl
-      title='Moderation' on='Enabled' fullWidth
-      description={<>
-        <Link level='body-sm' href='https://platform.openai.com/docs/guides/moderation/moderation' target='_blank'>Overview</Link>,
-        {' '}<Link level='body-sm' href='https://openai.com/policies/usage-policies' target='_blank'>policy</Link>
-      </>}
-      checked={moderationCheck}
-      onChange={on => updateSettings({ moderationCheck: on })}
-    />}
-
-    <SetupFormRefetchButton refetch={refetch} disabled={isFetching} error={isError} loading={isFetching} advanced={advanced} />
-
-    {isError && <InlineError error={error} />}
 
   </>;
 }

@@ -29,6 +29,19 @@ export interface IModelVendor<TServiceSettings extends Record<string, any> = {},
 
   rpcUpdateModelsOrThrow(
     access: TAccess,
-  ): Promise<{ models: ModelDescriptionSchema[] }>;
+  ): Promise<{ models: ModelDescriptionSchema[] }>; // Fetch and list models
+
+  listModels?(
+ access: TAccess,
+    aborter?: AbortSignal,
+  ): Promise<ModelDescriptionSchema[]>; // Hook to list models
+
+ passthrough?(
+    access: TAccess,
+    apiPath: string,
+    apiSite: string, // Could be the base URL for the API
+    chatGenerateRequest: any, // The request payload
+    llmId: string,
+ ): Promise<Response>; // Passthrough logic for API calls
 
 }

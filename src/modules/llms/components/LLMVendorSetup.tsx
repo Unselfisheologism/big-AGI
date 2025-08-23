@@ -7,7 +7,7 @@ import { findModelVendor, ModelVendorId } from '../vendors/vendors.registry';
 
 // direct imports for all vendor setup components - NOTE: we could lazy load if this becomes a performance issue
 import { LocalAIServiceSetup } from '../vendors/localai/LocalAIServiceSetup';
-import { PollinationsAIServiceSetup } from '../vendors/pollinationsai/PollinationsAIServiceSetup';
+import { PollinationsAIServiceSetup } from '../vendors/openai/OpenAIServiceSetup';
 
 
 /**
@@ -20,21 +20,6 @@ const vendorSetupComponents: Record<ModelVendorId, React.ComponentType<{ service
   localai: LocalAIServiceSetup,
 
   // Map all other providers to PollinationsAIServiceSetup
-  alibaba: PollinationsAIServiceSetup,
-  anthropic: PollinationsAIServiceSetup,
-  azure: PollinationsAIServiceSetup,
-  deepseek: PollinationsAIServiceSetup,
-  googleai: PollinationsAIServiceSetup,
-  groq: PollinationsAIServiceSetup,
-  lmstudio: PollinationsAIServiceSetup,
-  mistral: PollinationsAIServiceSetup,
-  ollama: PollinationsAIServiceSetup,
-  openai: PollinationsAIServiceSetup, // Keep OpenAI in the map, but route to Pollinations
-  openpipe: PollinationsAIServiceSetup,
-  openrouter: PollinationsAIServiceSetup,
-  perplexity: PollinationsAIServiceSetup,
-  togetherai: PollinationsAIServiceSetup,
-  xai: PollinationsAIServiceSetup, // Add the new Pollinations.ai vendor ID
   'pollinations.ai': PollinationsAIServiceSetup,
 } as const;
 

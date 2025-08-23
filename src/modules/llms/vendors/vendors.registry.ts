@@ -1,35 +1,20 @@
 import { ModelVendorLocalAI } from './localai/localai.vendor';
 import { ModelVendorOllama } from './ollama/ollama.vendor';
-import { ModelVendorOpenAI } from './openai/openai.vendor';
+import { ModelVendorPollinationsAI } from './openai/openai.vendor';
 
 import type { IModelVendor } from './IModelVendor';
 
 
 export type ModelVendorId =
-  | 'alibaba'
-  | 'anthropic'
-  | 'azure'
-  | 'deepseek'
-  | 'googleai'
-  | 'groq'
-  | 'lmstudio'
   | 'localai'
-  | 'mistral'
-  | 'ollama'
-  | 'openai'
-  | 'openpipe'
-  | 'openrouter'
-  | 'perplexity'
   | 'pollinations.ai'
-  | 'togetherai'
-  | 'xai'
   ;
 
 /** Global: Vendor Instances Registry **/
 const MODEL_VENDOR_REGISTRY: Record<ModelVendorId, IModelVendor> = {
   localai: ModelVendorLocalAI,
   ollama: ModelVendorOllama,
-  openai: ModelVendorOpenAI,
+  openai: ModelVendorPollinationsAI,
   'pollinations.ai': {} as IModelVendor, // Placeholder: Pollinations.ai doesn't have a dedicated vendor object in this registry yet
 } as Record<string, IModelVendor>;
 
