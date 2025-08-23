@@ -9,22 +9,7 @@ import { PhRobot } from '~/common/components/icons/phosphor/PhRobot';
 
 
 // direct imports for all vendor icons - given we use them frequently, we won't consider lazy loading them
-import { AlibabaCloudIcon } from '~/common/components/icons/vendors/AlibabaCloudIcon';
-import { AnthropicIcon } from '~/common/components/icons/vendors/AnthropicIcon';
-import { AzureIcon } from '~/common/components/icons/vendors/AzureIcon';
-import { DeepseekIcon } from '~/common/components/icons/vendors/DeepseekIcon';
-import { GeminiIcon } from '~/common/components/icons/vendors/GeminiIcon';
-import { GroqIcon } from '~/common/components/icons/vendors/GroqIcon';
-import { LMStudioIcon } from '~/common/components/icons/vendors/LMStudioIcon';
 import { LocalAIIcon } from '~/common/components/icons/vendors/LocalAIIcon';
-import { MistralIcon } from '~/common/components/icons/vendors/MistralIcon';
-import { OllamaIcon } from '~/common/components/icons/vendors/OllamaIcon';
-import { OpenAIIcon } from '~/common/components/icons/vendors/OpenAIIcon';
-import { OpenPipeIcon } from '~/common/components/icons/vendors/OpenPipeIcon';
-import { OpenRouterIcon } from '~/common/components/icons/vendors/OpenRouterIcon';
-import { PerplexityIcon } from '~/common/components/icons/vendors/PerplexityIcon';
-import { TogetherIcon } from '~/common/components/icons/vendors/TogetherIcon';
-import { XAIIcon } from '~/common/components/icons/vendors/XAIIcon';
 
 
 /**
@@ -33,22 +18,7 @@ import { XAIIcon } from '~/common/components/icons/vendors/XAIIcon';
  * They are used throughout the app and frequently.
  */
 const vendorIcons: Record<ModelVendorId, React.FunctionComponent<SvgIconProps>> = {
-  alibaba: AlibabaCloudIcon,
-  anthropic: AnthropicIcon,
-  azure: AzureIcon,
-  deepseek: DeepseekIcon,
-  googleai: GeminiIcon,
-  groq: GroqIcon,
-  lmstudio: LMStudioIcon,
   localai: LocalAIIcon,
-  mistral: MistralIcon,
-  ollama: OllamaIcon,
-  openai: OpenAIIcon,
-  openpipe: OpenPipeIcon,
-  openrouter: OpenRouterIcon,
-  perplexity: PerplexityIcon,
-  togetherai: TogetherIcon,
-  xai: XAIIcon,
   'pollinations.ai': PhRobot, // Add Pollinations.ai icon (using PhRobot as placeholder)
 };
 
