@@ -1,4 +1,3 @@
-import { ollamaAccess } from '~/modules/llms/server/ollama/ollama.router';
 import { openAIAccess } from '~/modules/llms/server/openai/openai.router';
 
 import { TRPCError } from '@trpc/server';
@@ -35,28 +34,9 @@ export function createChatGenerateDispatch(access: AixAPI_Access, model: AixAPI_
 } {
 
   switch (access.dialect) {
-    
-
     /**
-     * Ollama has now an OpenAI compability layer for `chatGenerate` API, but still its own protocol for models listing.
-     * - as such, we 'cast' here to the dispatch to an OpenAI dispatch, while using Ollama access
-     * - we still use the ollama.router for the models listing and aministration APIs
-     *
-     * For reference we show the old code for body/demuxerFormat/chatGenerateParse also below
+     * OpenAI and Compatible APIs
      */
-    case 'ollama':
-      return {
-        request: {
-          ...ollamaAccess(access, '/v1/chat/completions'), // use the OpenAI-compatible endpoint
-          // body: ollamaChatCompletionPayload(model, _hist, access.ollamaJson, streaming),
-          body: aixToOpenAIChatCompletions('openai', model, chatGenerate, access.ollamaJson, streaming),
-        },
-        // demuxerFormat: streaming ? 'json-nl' : null,
-        demuxerFormat: streaming ? 'fast-sse' : null,
-        // chatGenerateParse: createDispatchParserOllama(),
-        chatGenerateParse: streaming ? createOpenAIChatCompletionsChunkParser() : createOpenAIChatCompletionsParserNS(),
-      };
-
     case 'alibaba':
     case 'azure':
     case 'deepseek':
@@ -68,6 +48,7 @@ export function createChatGenerateDispatch(access: AixAPI_Access, model: AixAPI_
     case 'openpipe':
     case 'openrouter':
     case 'perplexity':
+    case 'pollinations.ai':
     case 'togetherai':
     case 'xai':
 
