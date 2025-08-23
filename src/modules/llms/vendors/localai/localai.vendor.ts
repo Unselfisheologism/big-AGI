@@ -1,7 +1,7 @@
 import type { IModelVendor } from '../IModelVendor';
 import type { OpenAIAccessSchema } from '../../server/openai/openai.router';
 
-import { ModelVendorOpenAI } from '../openai/openai.vendor';
+import { ModelVendorPollinationsAI } from '../openai/openai.vendor';
 
 
 interface DLocalAIServiceSettings {
@@ -36,6 +36,6 @@ export const ModelVendorLocalAI: IModelVendor<DLocalAIServiceSettings, OpenAIAcc
   }),
 
   // OpenAI transport ('localai' dialect in 'access')
-  rpcUpdateModelsOrThrow: ModelVendorOpenAI.rpcUpdateModelsOrThrow,
+  rpcUpdateModelsOrThrow: ModelVendorPollinationsAI.rpcUpdateModelsOrThrow,
 
 };

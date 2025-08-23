@@ -11,13 +11,13 @@ import type { IModelVendor } from '../vendors/IModelVendor';
 import { LLMVendorIcon } from '../components/LLMVendorIcon';
 import { ModelVendorLocalAI } from '../vendors/localai/localai.vendor';
 import { ModelVendorOllama } from '../vendors/ollama/ollama.vendor';
-import { ModelVendorOpenAI } from '../vendors/openai/openai.vendor';
+import { ModelVendorPollinationsAI } from '../vendors/openai/openai.vendor';
 import { llmsUpdateModelsForServiceOrThrow } from '../llm.client';
 
 
 // configuration
 const WizardProviders: ReadonlyArray<WizardProvider> = [
-  { cat: 'popular', vendor: ModelVendorOpenAI, settingsKey: 'oaiKey' } as const,
+  { cat: 'popular', vendor: ModelVendorPollinationsAI, settingsKey: 'oaiKey' } as const,
   { cat: 'local', vendor: ModelVendorLocalAI, settingsKey: 'localAIHost' } as const,
   { cat: 'local', vendor: ModelVendorOllama, settingsKey: 'ollamaHost' } as const,
   // { vendor: ModelVendorOpenRouter, settingsKey: 'oaiKey' } as const,
