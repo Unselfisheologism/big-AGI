@@ -6,7 +6,6 @@ import { findModelVendor, ModelVendorId } from '../vendors/vendors.registry';
 
 
 // direct imports for all vendor setup components - NOTE: we could lazy load if this becomes a performance issue
-import { LocalAIServiceSetup } from '../vendors/localai/LocalAIServiceSetup';
 import { PollinationsAIServiceSetup } from '../vendors/openai/OpenAIServiceSetup';
 
 
@@ -17,7 +16,6 @@ import { PollinationsAIServiceSetup } from '../vendors/openai/OpenAIServiceSetup
  */
 const vendorSetupComponents: Record<ModelVendorId, React.ComponentType<{ serviceId: DModelsServiceId }>> = {
   // Keep LocalAI
-  localai: LocalAIServiceSetup,
 
   // Map all other providers to PollinationsAIServiceSetup
   'pollinations.ai': PollinationsAIServiceSetup,

@@ -7,6 +7,7 @@ import { persist } from 'zustand/middleware';
 
 import type { IModelVendor } from '~/modules/llms/vendors/IModelVendor';
 import type { ModelVendorId } from '~/modules/llms/vendors/vendors.registry';
+import { findModelVendor } from '~/modules/llms/vendors/vendors.registry';
 
 import type { DModelDomainId } from './model.domains.types';
 import type { DModelParameterId, DModelParameterValues } from './llms.parameters';
@@ -290,6 +291,17 @@ export const useModelsStore = create<LlmsStore>()(persist(
       if (!state) return;
 
       // [GC] remove models that do not refer to a valid service
+      // Filter out services with unregistered vendor IDs
+      state.sources = state.sources.filter(service => {
+        try {
+          // Check if the vendor is still registered
+          findModelVendor(service.vId);
+          return true; // Keep the service if the vendor is found
+        } catch (error) {
+          console.warn(`[onRehydrateStorage] Filtering out service with unregistered vendor ID: ${service.vId}`);
+          return false; // Filter out the service if the vendor is not found
+        }
+      });
       state.llms = state.llms.map((llm: DLLM): DLLM | null => {
         // finds the service that provides the model
         const service = state.sources.find(s => s.id === llm.sId);

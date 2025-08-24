@@ -292,22 +292,6 @@ function _getTextToImageProviders(llmsModelServices: T2ILlmsModelServices[]) {
           vendor: 'pollinations.ai',
         });
         break;
-
-
-      case 'localai':
-        providers.push({
-          providerId: modelServiceId,
-          label: label,
-          painter: 'LocalAI',
-          description: 'LocalAI\'s models',
-          configured: hasAnyModels,
-          vendor: 'localai',
-        });
-        break;
-
-      default:
-        console.error('Unknown model vendor', modelVendorId);
-        break;
     }
   }
 
