@@ -9,7 +9,6 @@ import { useShallowStabilizer } from '~/common/util/hooks/useShallowObject';
 
 import type { IModelVendor } from '../vendors/IModelVendor';
 import { LLMVendorIcon } from '../components/LLMVendorIcon';
-import { ModelVendorLocalAI } from '../vendors/localai/localai.vendor';
 import { ModelVendorPollinationsAI } from '../vendors/openai/openai.vendor';
 import { llmsUpdateModelsForServiceOrThrow } from '../llm.client';
 
@@ -17,7 +16,6 @@ import { llmsUpdateModelsForServiceOrThrow } from '../llm.client';
 // configuration
 const WizardProviders: ReadonlyArray<WizardProvider> = [
   { cat: 'popular', vendor: ModelVendorPollinationsAI, settingsKey: 'oaiKey' } as const,
-  { cat: 'local', vendor: ModelVendorLocalAI, settingsKey: 'localAIHost' } as const,
   // { vendor: ModelVendorOpenRouter, settingsKey: 'oaiKey' } as const,
 ] as const;
 
