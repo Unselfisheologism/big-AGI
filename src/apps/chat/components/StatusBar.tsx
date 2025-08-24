@@ -185,7 +185,8 @@ export function StatusBar(props: { toggleMinimized?: () => void, isMinimized?: b
     if (maxLevel > 0)
       visibleShortcuts = visibleShortcuts.filter(s => s.level === maxLevel);
 
-    visibleShortcuts.sort((a, b) => {
+    // Filter out shortcuts with undefined keys before sorting and sort
+    const sortedItems = visibleShortcuts.filter(s => !!s.key).sort((a, b) => {
       // 1. First by level
       if ((a.level ?? 0) !== (b.level ?? 0))
         return (b.level ?? 0) - (a.level ?? 0);
@@ -207,7 +208,7 @@ export function StatusBar(props: { toggleMinimized?: () => void, isMinimized?: b
       // 4. Finally alphabetically by key
       return a.key.localeCompare(b.key);
     });
-    return visibleShortcuts;
+    return sortedItems;
   }));
 
   // handlers

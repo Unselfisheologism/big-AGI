@@ -28,7 +28,14 @@ export function LinkChatDrawer(props: {
 
   // derived state
   const { activeLinkId, onDeleteLink } = props;
-  const chatLinkItems = props.sharedChatLinkItems.toSorted((a, b) => b.createdAt.localeCompare(a.createdAt));
+  // Filter out items with undefined createdAt before sorting
+  const validChatLinkItems = props.sharedChatLinkItems.filter(item => item && item.createdAt !== undefined);
+  const chatLinkItems = validChatLinkItems.toSorted((a, b) => {
+    if (b.createdAt === undefined || a.createdAt === undefined) {
+      return 0; // Keep original order or handle as needed
+    }
+    return b.createdAt.localeCompare(a.createdAt);
+  });
   const hasLinks = chatLinkItems.length > 0;
 
 

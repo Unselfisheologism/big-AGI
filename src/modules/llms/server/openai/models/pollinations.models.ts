@@ -244,7 +244,9 @@ export function pollinationsModels(): ModelDescriptionSchema[] {
   // In a real dynamic implementation, you would fetch from
   // https://text.pollinations.ai/models here and map the response.
   // For this exercise, we return the hardcoded list.
-  return POLLINATIONS_MODELS.map(model => fromManualMapping([], model.id, undefined, undefined ));
+  return POLLINATIONS_MODELS
+    .map(model => fromManualMapping([], model.id, undefined, undefined))
+    .filter(model => model.label !== undefined && model.label !== null); // Filter out models with undefined/null labels
 }
 
 export function pollinationsModelSort(a: ModelDescriptionSchema, b: ModelDescriptionSchema): number {

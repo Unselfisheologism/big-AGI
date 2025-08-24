@@ -315,8 +315,10 @@ function _getTextToImageProviders(llmsModelServices: T2ILlmsModelServices[]) {
   // ... (e.g. we used to have Prodia here)
 
   // Sort providers by vendor priority (then by label for deterministic ordering)
-  return providers.sort((a, b) => {
-    const priorityA = T2I_VENDOR_PRIORITIES[a.vendor as keyof typeof T2I_VENDOR_PRIORITIES] ?? 999;
+  return providers
+    .filter(p => p && p.label !== undefined) // Filter out null/undefined providers or those with undefined labels
+    .sort((a, b) => {
+ const priorityA = T2I_VENDOR_PRIORITIES[a.vendor as keyof typeof T2I_VENDOR_PRIORITIES] ?? 999;
     const priorityB = T2I_VENDOR_PRIORITIES[b.vendor as keyof typeof T2I_VENDOR_PRIORITIES] ?? 999;
     if (priorityA !== priorityB) return priorityA - priorityB;
     return a.label.localeCompare(b.label);

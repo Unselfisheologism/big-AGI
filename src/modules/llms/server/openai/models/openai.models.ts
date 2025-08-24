@@ -1232,5 +1232,7 @@ export function openAISortModels(a: ModelDescriptionSchema, b: ModelDescriptionS
   }
 
   // due to using by-label, sorting doesn't require special cases anymore
+  // Add filter condition to check for defined labels before sorting
+  if (a.label === undefined || b.label === undefined) return 0; // Or handle as needed
   return remapReleaseDate(b.label).localeCompare(remapReleaseDate(a.label));
 }

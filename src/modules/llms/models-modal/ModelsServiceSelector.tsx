@@ -98,10 +98,13 @@ export function ModelsServiceSelector(props: {
     // prepare the items
     const vendorItems = findAllModelVendors()
       .filter(v => v.instanceLimit !== 0)
+      // Filter out vendors with undefined names before sorting
+      .filter(vendor => vendor.name !== undefined)
       .sort((a, b) => {
         // sort first by 'cloud' on top (vs. 'local'), then by name
         // if (a.location !== b.location)
         //   return a.location === 'cloud' ? -1 : 1;
+        // We can safely use localeCompare here because we filtered above
         return a.name.localeCompare(b.name);
       })
       .map(vendor => {
@@ -181,7 +184,8 @@ export function ModelsServiceSelector(props: {
           ),
         };
       }).sort((a, b) => a.service.label.localeCompare(b.service.label))
-    , [modelsServices]);
+    , [modelsServices])  
+    .filter(item => item && item.service && item.service.label !== undefined);
 
   const selectedServiceItem = serviceItems.find(item => item.service.id === props.selectedServiceId);
   const noServices = !serviceItems.length;
