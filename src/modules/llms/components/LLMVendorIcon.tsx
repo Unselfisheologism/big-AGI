@@ -9,7 +9,7 @@ import { PhRobot } from '~/common/components/icons/phosphor/PhRobot';
 
 
 // direct imports for all vendor icons - given we use them frequently, we won't consider lazy loading them
-import { LocalAIIcon } from '~/common/components/icons/vendors/LocalAIIcon';
+
 
 
 /**
@@ -18,7 +18,6 @@ import { LocalAIIcon } from '~/common/components/icons/vendors/LocalAIIcon';
  * They are used throughout the app and frequently.
  */
 const vendorIcons: Record<ModelVendorId, React.FunctionComponent<SvgIconProps>> = {
-  localai: LocalAIIcon,
   'pollinations.ai': PhRobot, // Add Pollinations.ai icon (using PhRobot as placeholder)
 };
 
