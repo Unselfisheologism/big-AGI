@@ -38,8 +38,8 @@ export const ModelVendorPollinationsAI: IModelVendor<DPollinationsAIAccess, Open
     console.warn('Pollinations.ai does not have a standard /models endpoint for listing details. Using placeholder.');
     return {
       models: [{
-        id: 'pollinations.ai-default-text-model', // Replace with an actual model ID if known
-        label: 'Pollinations.AI Default Text',
+        id: 'openai-audio', // Replace with an actual model ID if known
+        label: 'OpenAI GPT-4o Mini Audio Preview',
         created: 0, updated: 0,
         description: 'A default text model from Pollinations.AI',
         contextWindow: 8192, // Placeholder context window
