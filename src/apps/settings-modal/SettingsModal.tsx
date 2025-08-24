@@ -11,7 +11,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import TerminalOutlinedIcon from '@mui/icons-material/TerminalOutlined';
 
 import { BrowseSettings } from '~/modules/browse/BrowseSettings';
-import { DallESettings } from '~/modules/t2i/dalle/DallESettings';
 import { ElevenlabsSettings } from '~/modules/elevenlabs/ElevenlabsSettings';
 import { GoogleSearchSettings } from '~/modules/google/GoogleSearchSettings';
 import { T2ISettings } from '~/modules/t2i/T2ISettings';
@@ -280,11 +279,8 @@ export function SettingsModal(props: {
 
         <TabPanel value='draw' variant='outlined' sx={_styles.tabPanel}>
           <Topics>
-            <Topic>
-              <T2ISettings />
-            </Topic>
-            <Topic icon='🖍️️' title='OpenAI'>
-              <DallESettings />
+            <Topic icon='✏️' title='Pollinations.AI'>
+              <T2ISettings/>
             </Topic>
           </Topics>
         </TabPanel>
