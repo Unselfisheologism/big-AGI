@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import type { AixParts_InlineImagePart } from '~/modules/aix/server/api/aix.wiretypes';
 import type { ModelVendorId } from '~/modules/llms/vendors/vendors.registry';
-import { resolveDalleModelId, useDalleStore } from '~/modules/t2i/dalle/store-module-dalle';
+import { useT2ISettingsStore } from '~/modules/t2i/dalle/store-module-t2i-settings';
 
 import { addDBImageAsset, DBlobDBScopeId } from '~/common/stores/blob/dblobs-portability';
 import { nanoidToUuidV4 } from '~/common/util/idUtils';
@@ -10,15 +10,13 @@ import { nanoidToUuidV4 } from '~/common/util/idUtils';
 import type { CapabilityTextToImage, TextToImageProvider } from '~/common/components/useCapabilities';
 import type { DLLM } from '~/common/stores/llms/llms.types';
 import type { DModelsService, DModelsServiceId } from '~/common/stores/llms/llms.service.types';
-import { convert_Base64WithMimeType_To_Blob } from '~/common/util/blobUtils';
 import { createDMessageDataRefDBlob, createZyncAssetReferenceContentFragment, DMessageContentFragment } from '~/common/stores/chat/chat.fragments';
 import { llmsStoreState, useModelsStore } from '~/common/stores/llms/store-llms';
 import { shallowEquals } from '~/common/util/hooks/useShallowObject';
 
 import type { T2iCreateImageOutput } from './t2i.server';
-import { openAIGenerateImagesOrThrow, openAIImageModelsCurrentGeneratorName } from './dalle/openaiGenerateImages';
 import { useTextToImageStore } from './store-module-t2i';
-
+import { convert_Base64WithMimeType_To_Blob } from '~/common/util/blobUtils';
 
 // configuration
 const T2I_ENABLE_LOCAL_AI = false; // Note: LocalAI t2i integration is experimental
@@ -43,25 +41,34 @@ export function useCapabilityTextToImage(): CapabilityTextToImage {
 
   const userProviderId = useTextToImageStore(state => state.selectedT2IProviderId);
 
-  const dalleModelId = useDalleStore(state => state.dalleModelId);
-
+  // Destructure Pollinations.ai settings and setters from the store
+  const {
+    pollinationsAIModelId,
+    setPollinationsAIModelId,
+    pollinationsAISeed,
+    setPollinationsAISeed,
+    pollinationsAINologo,
+    setPollinationsAINologo,
+    // Added the missing setters from the CapabilityTextToImage interface
+    pollinationsAIWidth,
+    setPollinationsAIWidth,
+    pollinationsAIHeight,
+    setPollinationsAIHeight,
+  } = useT2ISettingsStore(); // Use the hook directly
 
 
   // memo
-
   const { mayWork, mayEdit, providers, activeProvider } = React.useMemo(() => {
     const providers = _getTextToImageProviders(llmsModelServices);
     const activeProvider = _resolveActiveT2IProvider(userProviderId, providers);
     const mayWork = providers.some(p => p.configured);
-    const resolvedDalleModelId = resolveDalleModelId(dalleModelId);
-    const mayEdit = activeProvider?.vendor === 'openai' && resolvedDalleModelId === 'gpt-image-1';
     return {
-      mayWork,
-      mayEdit,
+      mayWork, 
+      mayEdit: false,
       providers,
       activeProvider,
     };
-  }, [userProviderId, dalleModelId, llmsModelServices]);
+  }, [userProviderId, llmsModelServices]);
 
 
   return {
@@ -70,6 +77,16 @@ export function useCapabilityTextToImage(): CapabilityTextToImage {
     providers,
     activeProviderId: activeProvider?.providerId || null,
     setActiveProviderId: useTextToImageStore.getState().setSelectedT2IProviderId,
+    pollinationsAIModelId,
+    setPollinationsAIModelId,
+    pollinationsAISeed,
+    setPollinationsAISeed,
+    pollinationsAINologo,
+    setPollinationsAINologo,
+    pollinationsAIWidth,
+    setPollinationsAIWidth,
+    pollinationsAIHeight,
+    setPollinationsAIHeight,
   };
 }
 
@@ -93,28 +110,70 @@ export function getActiveTextToImageProviderOrThrow() {
 }
 
 async function _t2iGenerateImagesOrThrow({ providerId, vendor }: TextToImageProvider, prompt: string, aixInlineImageParts: AixParts_InlineImagePart[], count: number): Promise<T2iCreateImageOutput[]> {
+
+  // Pollinations.ai parameters - map from DALL-E configuration or use defaults
+  const {
+    pollinationsAIWidth, pollinationsAIHeight, pollinationsAIModelId, pollinationsAISeed,
+  } = useT2ISettingsStore.getState();
+
+
+  // Default to 'flux' for Pollinations.ai if a specific model isn't picked
+  const model = pollinationsAIModelId || 'flux'; // Use the actual stored model or default
+
+  // Basic seed for reproducibility - Pollinations.ai uses 'seed'
+  const seed = Math.floor(Math.random() * 1000000); // Example: use a random seed if not provided
+
   switch (vendor) {
 
     case 'gemini':
       throw new Error('Gemini Imagen integration coming soon');
 
     case 'localai':
-      // if (!provider.providerId)
-      //   throw new Error('No LocalAI Model service configured for TextToImage');
-      // return await localaiGenerateImages(provider.id, prompt, count);
       throw new Error('LocalAI t2i integration is not yet available');
 
-    case 'openai':
-      if (!providerId)
-        throw new Error('No OpenAI Model Service configured for TextToImage');
-      return await openAIGenerateImagesOrThrow(providerId, prompt, aixInlineImageParts, count);
+    case 'pollinations.ai':
+      // Pollinations.ai uses a simple GET endpoint
+      const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&width=${pollinationsAIWidth}&height=${pollinationsAIHeight}&seed=${pollinationsAISeed}&n=${count}`;
 
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Pollinations.ai API error: ${response.status} ${response.statusText}`);
+      }
+
+      const imageBlob = await response.blob();
+
+      // Define width and height from settings
+      const width = pollinationsAIWidth ?? 0;
+      const height = pollinationsAIHeight ?? 0;
+
+      // Process the fetched image blob and return as T2iCreateImageOutput[]
+      // Since Pollinations.ai GET endpoint returns a single image, loop 'count' times for multiple images
+      const generatedImages: T2iCreateImageOutput[] = [];
+      for (let i = 0; i < count; i++) {
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(imageBlob); // Use the fetched imageBlob
+        });
+
+        // Construct parameters object
+        const parameters = {
+          model,
+          seed, // Assuming the same seed for all images if count > 1 for this endpoint
+        };
+        generatedImages.push({ base64Data, mimeType: imageBlob.type, width, height, altText: prompt, generatorName: 'Pollinations.ai', generatedAt: new Date().toISOString(), parameters });
+      }
+      // if (!provider.providerId)
+      //   throw new Error('No LocalAI Model service configured for TextToImage');
+      // return await localaiGenerateImages(provider.id, prompt, count);      
     case 'xai':
       throw new Error('xAI image generation integration coming soon');
 
     default:
       throw new Error(`Unknown T2I vendor: ${vendor}`);
   }
+
 }
 
 /**
@@ -141,7 +200,6 @@ export async function t2iGenerateImageContentFragments(
   const imageFragments: DMessageContentFragment[] = [];
   for (const _i of generatedImages) {
 
-    // base64 -> blob conversion
     const imageBlob = await convert_Base64WithMimeType_To_Blob(_i.base64Data, _i.mimeType, 't2iGenerateImageContentFragments');
 
     // NOTE: no resize/type conversion, store as-is
@@ -198,7 +256,7 @@ interface T2ILlmsModelServices {
 
 function _findLlmsT2IServices(llms: ReadonlyArray<DLLM>, services: ReadonlyArray<DModelsService>) {
   return services
-    .filter(s => (s.vId === 'openai' || (T2I_ENABLE_LOCAL_AI && s.vId === 'localai')))
+    .filter(s => s.vId === 'pollinations.ai' || (T2I_ENABLE_LOCAL_AI && s.vId === 'localai')) // Removed the OpenAI check
     .map((s): T2ILlmsModelServices => ({
       label: s.label,
       modelVendorId: s.vId,
@@ -210,8 +268,8 @@ function _findLlmsT2IServices(llms: ReadonlyArray<DLLM>, services: ReadonlyArray
 
 // Vendor priority system for auto-selection (lower number = higher priority)
 const T2I_VENDOR_PRIORITIES = {
-  openai: 1,    // highest priority (mature, reliable)
-  gemini: 2,    // second (Google Imagen - future)
+  'pollinations.ai': 1, // Added Pollinations.ai with high priority as per request
+  gemini: 2,    // second (Google Imagen - future) - shifted priority
   xai: 3,       // third (Grok vision - future reference)
   localai: 9,   // lowest (experimental)
 } as const;
@@ -224,17 +282,17 @@ function _getTextToImageProviders(llmsModelServices: T2ILlmsModelServices[]) {
   for (const { modelVendorId, modelServiceId, label, hasAnyModels } of llmsModelServices) {
     switch (modelVendorId) {
 
-      case 'openai':
+      case 'pollinations.ai':
         providers.push({
           providerId: modelServiceId,
-          label: label,
-          painter: openAIImageModelsCurrentGeneratorName(), // sync this with dMessageUtils.tsx
-          // painter: 'DALL·E',
-          description: 'OpenAI Image generation models',
+          label: 'Pollinations.ai',
+          painter: 'Pollinations.ai',
+          description: 'Pollinations.ai Image Generation (Flux, Kontext, Turbo)',
           configured: hasAnyModels,
-          vendor: 'openai',
+          vendor: 'pollinations.ai',
         });
         break;
+
 
       case 'localai':
         providers.push({
@@ -258,8 +316,8 @@ function _getTextToImageProviders(llmsModelServices: T2ILlmsModelServices[]) {
 
   // Sort providers by vendor priority (then by label for deterministic ordering)
   return providers.sort((a, b) => {
-    const priorityA = T2I_VENDOR_PRIORITIES[a.vendor] ?? 999;
-    const priorityB = T2I_VENDOR_PRIORITIES[b.vendor] ?? 999;
+    const priorityA = T2I_VENDOR_PRIORITIES[a.vendor as keyof typeof T2I_VENDOR_PRIORITIES] ?? 999;
+    const priorityB = T2I_VENDOR_PRIORITIES[b.vendor as keyof typeof T2I_VENDOR_PRIORITIES] ?? 999;
     if (priorityA !== priorityB) return priorityA - priorityB;
     return a.label.localeCompare(b.label);
   });

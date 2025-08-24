@@ -9,6 +9,7 @@ import { FormLabelStart } from './FormLabelStart';
 
 export type FormRadioOption<T extends string> = {
   value: T,
+  title?: string | React.JSX.Element,
   label: string | React.JSX.Element,
   disabled?: boolean
 };

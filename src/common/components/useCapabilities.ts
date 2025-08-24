@@ -49,9 +49,12 @@ type TextToImageVendor =
   | 'gemini'
   | 'localai'
   | 'openai'
+  | 'pollinations.ai'
   | 'xai'
   ;
 
+// Import the specific type from the store file
+import type { PollinationsAIModelSelection } from '~/modules/t2i/dalle/store-module-t2i-settings';
 
 export interface CapabilityTextToImage {
   mayWork: boolean;
@@ -59,6 +62,17 @@ export interface CapabilityTextToImage {
   providers: TextToImageProvider[],
   activeProviderId: string | null;
   setActiveProviderId: (providerId: string | null) => void;
+  // Use the specific type from the store for Pollinations.ai model
+  pollinationsAIModelId?: PollinationsAIModelSelection;
+  setPollinationsAIModelId: (modelId: PollinationsAIModelSelection) => void;
+  pollinationsAIWidth?: number | undefined;
+  setPollinationsAIWidth: (width: number | undefined) => void;
+  pollinationsAIHeight?: number | undefined;
+  setPollinationsAIHeight: (height: number | undefined) => void;
+  pollinationsAISeed?: number | undefined;
+  setPollinationsAISeed: (seed: number | undefined) => void;
+  pollinationsAINologo?: boolean | undefined;
+  setPollinationsAINologo: (nologo: boolean | undefined) => void;
 }
 
 export { useCapabilityTextToImage } from '~/modules/t2i/t2i.client';

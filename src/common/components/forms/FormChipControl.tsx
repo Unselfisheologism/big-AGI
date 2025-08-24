@@ -41,8 +41,8 @@ export const FormChipControl = <TValue extends string>(props: {
   description?: string | React.JSX.Element;
   tooltip?: string | React.JSX.Element;
   disabled?: boolean;
-  options: Immutable<FormRadioOption<TValue>[]>;
-  value?: TValue;
+  options: Immutable<FormRadioOption<TValue>[]>; // Allow null in options value
+  value?: TValue | null;
   onChange: (value: Immutable<TValue>) => void;
 }) => {
 
