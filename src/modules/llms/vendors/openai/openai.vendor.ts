@@ -7,6 +7,8 @@ import type { DLLM, DModelInterfaceV1 } from '~/common/stores/llms/llms.types'; 
 import { LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json, LLM_IF_Outputs_Audio } from '~/common/stores/llms/llms.types'; // Import specific interfaces
 import type { DModelDomainId } from '~/common/stores/llms/model.domains.types';
 
+import { PollinationsaiWire_API_Models_List } from 'src/modules/pollinationsai/server/pollinationsai.wiretypes'; // Import Pollinations.ai wiretypes
+
 
 // special symbols
 // export const isValidOpenAIApiKey = (apiKey?: string) => !!apiKey && apiKey.startsWith('sk-') && apiKey.length > 40;
@@ -36,26 +38,60 @@ export const ModelVendorPollinationsAI: IModelVendor<DPollinationsAIAccess, Open
 
   // List Models
   rpcUpdateModelsOrThrow: async (access) => {
-    // As per user's instruction, do not fetch the models list.
-    // Keep the placeholder model for now to avoid breaking the model selection UI.
-    console.warn('Pollinations.ai does not have a standard /models endpoint for listing details. Using placeholder model definition.');
-    return {
-      models: [{
-        id: 'openai-audio', // Use the preconfigured model ID
-        label: 'OpenAI GPT-4o Mini Audio Preview',
-        created: 0, updated: 0,
-        description: 'A default text model from Pollinations.AI',
-        contextWindow: 8192, // Placeholder context window
-        interfaces: [LLM_IF_OAI_Chat, LLM_IF_Outputs_Audio], // Assume chat and audio output
-        hidden: false,
-        isVision: true, // Assuming it has vision capabilities based on previous context
-        isTts: true, // Mark as TTS capable
-        isStt: true, // Mark as STT capable
-        functionCalling: true, // Assuming it has function calling capabilities
-        pricing: { chatIn: 0, chatOut: 0 } as any, // Unknown pricing
-      }],
+    const textHost = access.oaiHost || 'https://text.pollinations.ai';
+    const apiKey = access.oaiKey;
+
+    const url = `${textHost}/models`;
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }),
     };
+
+    try {
+      const response = await fetch(url, { headers });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Pollinations.AI API Error fetching models: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data: PollinationsaiWire_API_Models_List.Model[] = await response.json(); // Assuming the response is an array of models
+
+      // Map Pollinations.ai models to ModelDescriptionSchema
+      const models: ModelDescriptionSchema[] = data.map(pollModel => {
+        const modelId = pollModel.id;
+        const modelLabel = pollModel.id; // Use id as label for now, or parse display_name if available
+
+        // Determine interfaces based on model capabilities (refer to Pollinations.ai docs for actual capabilities)
+        const interfaces: DModelInterfaceV1[] = [LLM_IF_OAI_Chat]; // Assume chat capability by default
+        if (modelId.includes('vision')) interfaces.push(LLM_IF_OAI_Vision);
+        if (modelId.includes('audio') || modelId === 'openai-audio') interfaces.push(LLM_IF_Outputs_Audio); // Assume audio output for openai-audio
+        // Add other interface checks based on model ID or other properties if available
+
+        return {
+          id: modelId,
+          label: modelLabel,
+          created: 0, // Or map from Pollinations.ai data if available
+          updated: 0, // Or map from Pollinations.ai data if available
+          description: pollModel.id, // Use id as description for now, or parse from Pollinations.ai data
+          contextWindow: 8192, // Placeholder context window - Update if Pollinations.ai provides this
+          interfaces: interfaces,
+          hidden: false,
+          isVision: interfaces.includes(LLM_IF_OAI_Vision),
+          isTts: interfaces.includes(LLM_IF_Outputs_Audio), // Assuming audio output implies TTS
+          isStt: modelId.includes('audio') || modelId === 'openai-audio', // Assuming audio input implies STT
+          functionCalling: modelId.includes('function'), // Assuming models with 'function' in ID support function calling
+          pricing: { chatIn: 0, chatOut: 0 } as any, // Unknown pricing - Update if Pollinations.ai provides this
+        };
+      });
+
+      return { models };
+
+    } catch (error) {
+      console.error('Error fetching Pollinations.ai models:', error);
+      throw new Error(`Failed to fetch Pollinations.ai models: ${error}`);
+    }
   },
+
 
   // Passthrough logic for Pollinations.ai
    passthrough: async (access, apiPath, apiSite, chatGenerateRequest, llmId) => {
@@ -70,41 +106,11 @@ export const ModelVendorPollinationsAI: IModelVendor<DPollinationsAIAccess, Open
      };
       let body: any = JSON.stringify(chatGenerateRequest); // Default body
 
-     // Handle the specific case for 'openai-audio' and chat completions using GET to root endpoint
-     if (llmId === 'openai-audio') {
-        console.warn('Handling openai-audio chat completion with Pollinations.ai GET endpoint.');
-        method = 'GET';
-        headers = {}; // GET requests typically don't need Content-Type application/json
-        body = undefined; // GET requests do not have a body
-
-        // Extract prompt from the chatGenerateRequest (assuming it's in the messages array)
-        let prompt = '';
-        const messages = (chatGenerateRequest as any)?.messages;
-        if (Array.isArray(messages)) {
-            for (const message of messages) {
-                if (message.role === 'user' && typeof message.content === 'string') {
-                    prompt = message.content; // Take the first user message content as the prompt
-                    break;
-                }
-            }
-        }
-
-        if (!prompt) {
-            throw new Error('Text generation requires a text prompt in the user message.');
-        }
-
-        const encodedPrompt = encodeURIComponent(prompt);
-        // Construct the GET URL for text/audio generation
-        url = `${textHost}/${encodedPrompt}?model=${llmId}`; // Include model parameter
-
-        // TODO: Add logic here to include other relevant parameters from chatGenerateRequest
-        // like 'voice' for audio generation if needed, and other text generation parameters
-        // like temperature, etc., as query parameters in the URL.
-
-     } else if (apiPath === '/chat/completions') {
-        // Default handling for other models using the OpenAI-compatible POST endpoint
+      // Always use the OpenAI-compatible POST endpoint for chat completions
+     if (apiPath === '/chat/completions') {
         url = `${textHost}/openai`;
         method = 'POST';
+        // The chatGenerateRequest (which is in OpenAI format) is already in the body
      } else if (apiPath === '/models') {
         // Model listing is handled by rpcUpdateModelsOrThrow
          console.warn('Attempted to list models via passthrough - should use rpcUpdateModelsOrThrow instead.');
