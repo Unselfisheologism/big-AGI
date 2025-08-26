@@ -46,10 +46,10 @@ export const ModelVendorPollinationsAI: IModelVendor<DPollinationsAIAccess, Open
         interfaces: ['oai-chat'] as ('oai-chat' | 'oai-chat-fn' | 'oai-chat-json' | 'oai-chat-vision' | 'oai-chat-reasoning')[], // Assuming chat interface
         isChat: true,
         isHidden: false,
-        isVision: false,
-        isTts: false,
-        isStt: false,
-        functionCalling: false, // Assume no function calling for the default
+        isVision: true,
+        isTts: true,
+        isStt: true,
+        functionCalling: true, // Assume no function calling for the default
         pricing: { chatIn: 0, chatOut: 0 } as any, // Unknown pricing - use any for now or define a proper pricing schema
       }],
     };

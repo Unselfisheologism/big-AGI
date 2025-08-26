@@ -151,7 +151,7 @@ export const llmOpenAIRouter = createTRPCRouter({
     .query(async ({ input: { access } }): Promise<{ models: ModelDescriptionSchema[] }> => {
 
       // Handle LocalAI separately
-      if (access.dialect === 'localai') {
+      if (access.dialect === 'pollinations.ai') {
         const openAIWireModelsResponse = await openaiGETOrThrow<OpenAIWire_API_Models_List.Response>(access, '/v1/models');
         let openAIModels = openAIWireModelsResponse.data || [];
         return {
@@ -201,7 +201,7 @@ export const llmOpenAIRouter = createTRPCRouter({
         };
 
         // [LocalAI] Fix: LocalAI does not want the 'response_format' field
-        if (access.dialect === 'localai' && 'response_format' in requestBody)
+        if (access.dialect === 'pollinations.ai' && 'response_format' in requestBody)
           delete requestBody['response_format'];
 
         // auto-selects the output image mime type - or defaults to the first one
@@ -367,7 +367,7 @@ export const llmOpenAIRouter = createTRPCRouter({
 });
 
 
-const DEFAULT_POLLINATIONS_API_HOST = 'https://text.pollinations.ai/openai'; // Default for text/multimodal
+const DEFAULT_POLLINATIONS_API_HOST = 'https://text.pollinations.ai'; // Default for text/multimodal
 
 
 /**
@@ -394,7 +394,7 @@ const DEFAULT_LOCALAI_HOST = 'http://127.0.0.1:8080';
 
 export function openAIAccess(access: OpenAIAccessSchema, modelRefId: string | null, apiPath: string): { headers: HeadersInit, url: string } {
   // Handle LocalAI separately
-  if (access.dialect === 'localai') {
+  if (access.dialect === 'pollinations.ai') {
     const localAIKey = access.oaiKey || env.LOCALAI_API_KEY || '';
     const localAIHost = fixupHost(access.oaiHost || env.LOCALAI_API_HOST || DEFAULT_LOCALAI_HOST, apiPath);
     return {
@@ -409,13 +409,28 @@ export function openAIAccess(access: OpenAIAccessSchema, modelRefId: string | nu
   // For all other dialects, use Pollinations.AI
   const pollKey = access.oaiKey || env.POLLINATIONS_API_KEY || '';
   let pollHost: string;
+  let url: string;
 
-  // Determine host based on API path (image generation vs text/multimodal)
-  if (apiPath.startsWith('/v1/images/generations') || apiPath.startsWith('/v1/images/edits')) {
-    pollHost = fixupHost(access.oaiHost || env.POLLINATIONS_API_HOST?.replace('/openai', '') || 'https://image.pollinations.ai', apiPath);
-  } else {
-    // Default to text/multimodal endpoint for other API paths (chat, models, etc.)
-    pollHost = fixupHost(access.oaiHost || env.POLLINATIONS_API_HOST || DEFAULT_POLLINATIONS_API_HOST, apiPath);
+  if (apiPath === '/chat/completions') {
+    pollHost = access.oaiHost || env.POLLINATIONS_API_HOST || DEFAULT_POLLINATIONS_API_HOST;
+    url = `${fixupHost(pollHost, '/openai')}/openai`; // Use the OpenAI-compatible endpoint path
+  } else if (apiPath.startsWith('/images/generations')) {
+      // Pollinations.ai image generation uses a GET request to a different endpoint structure
+      // The construction of the full image URL should happen in the createImages mutation
+      pollHost = access.oaiHost?.replace('/openai', '') || env.POLLINATIONS_API_HOST?.replace('/openai', '') || 'https://image.pollinations.ai'; // Use the image host
+      url = `${fixupHost(pollHost, '')}${apiPath}`; // Keep the apiPath as is for now, will be fully constructed in createImages
+      console.warn(`openAIAccess: Image generation URL will be fully constructed in createImages mutation.`);
+    }
+  else if (apiPath === '/models') {
+    // Pollinations.ai model listing endpoint
+    pollHost = access.oaiHost || env.POLLINATIONS_API_HOST || DEFAULT_POLLINATIONS_API_HOST;
+    url = `${fixupHost(pollHost, '/models')}/models`;
+  }
+  else {
+    // Handle other potential API paths if Pollinations.ai supports them
+    pollHost = access.oaiHost || env.POLLINATIONS_API_HOST || DEFAULT_POLLINATIONS_API_HOST;
+    url = `${fixupHost(pollHost, apiPath)}${apiPath}`;
+    console.warn(`openAIAccess: Using generic path for Pollinations.ai: ${apiPath}`);
   }
 
   // Add Referrer header
@@ -433,7 +448,7 @@ export function openAIAccess(access: OpenAIAccessSchema, modelRefId: string | nu
 
   return {
     headers,
-    url: pollHost + apiPath,
+    url: url,
   };
 }
 

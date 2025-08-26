@@ -45,7 +45,7 @@ export function createChatGenerateDispatch(access: AixAPI_Access, model: AixAPI_
       if (isResponsesAPI) {
         return {
           request: {
-            ...openAIAccess(access, model.id, '/v1/responses'),
+            ...openAIAccess(access, model.id, '/responses'),
             body: aixToOpenAIResponses(model, chatGenerate, false, streaming),
           },
           demuxerFormat: streaming ? 'fast-sse' : null,
@@ -55,7 +55,7 @@ export function createChatGenerateDispatch(access: AixAPI_Access, model: AixAPI_
 
       return {
         request: {
-          ...openAIAccess(access, model.id, '/v1/chat/completions'),
+          ...openAIAccess(access, model.id, '/chat/completions'),
           body: aixToOpenAIChatCompletions(access.dialect, model, chatGenerate, false, streaming),
         },
         demuxerFormat: streaming ? 'fast-sse' : null,
