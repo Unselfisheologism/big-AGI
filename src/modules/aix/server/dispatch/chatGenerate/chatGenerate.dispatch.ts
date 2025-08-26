@@ -37,20 +37,8 @@ export function createChatGenerateDispatch(access: AixAPI_Access, model: AixAPI_
     /**
      * OpenAI and Compatible APIs
      */
-    case 'alibaba':
-    case 'azure':
-    case 'deepseek':
-    case 'groq':
-    case 'lmstudio':
-    case 'localai':
-    case 'mistral':
     case 'openai':
-    case 'openpipe':
-    case 'openrouter':
-    case 'perplexity':
     case 'pollinations.ai':
-    case 'togetherai':
-    case 'xai':
 
       // switch to the Responses API if the model supports it
       const isResponsesAPI = !!model.vndOaiResponsesAPI;
