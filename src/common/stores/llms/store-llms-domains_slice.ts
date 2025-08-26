@@ -2,7 +2,7 @@ import type { StateCreator } from 'zustand/vanilla';
 
 import type { ModelVendorId } from '~/modules/llms/vendors/vendors.registry';
 
-import type { DLLM, DLLMId } from './llms.types';
+import { DLLM, DLLMId, LLM_IF_OAI_Chat, LLM_IF_OAI_Fn, LLM_IF_OAI_Vision } from './llms.types'; // Import necessary interfaces
 import type { DModelDomainId } from './model.domains.types';
 import { LlmsRootState, useModelsStore } from './store-llms';
 import { ModelDomainsList, ModelDomainsRegistry } from './model.domains.registry';
@@ -160,11 +160,12 @@ export function llmsHeuristicGetTopDiverseLlmIds(count: number, requireElo: bool
 
 /**
  * Heuristic to update the assignments (either missing or invalid due to removed models).
+ * Modified to prioritize Pollinations.ai models for auto-assignment if available and suitable.
  */
 export function llmsHeuristicUpdateAssignments(allLlms: ReadonlyArray<DLLM>, existingAssignments: Partial<Record<DModelDomainId, DModelConfiguration>>): LlmsAssignmentsState['modelAssignments'] {
   return ModelDomainsList.reduce((acc, domainId: DModelDomainId) => {
 
-    // reuse the existing assignment, if present
+    // reuse the existing assignment, if present and the model is still available
     const existingAssignment = existingAssignments[domainId] ?? undefined;
     if (existingAssignment && (
       existingAssignment.modelId === null || // we allow for "don't have a model", which is the null option
@@ -174,10 +175,64 @@ export function llmsHeuristicUpdateAssignments(allLlms: ReadonlyArray<DLLM>, exi
       return acc;
     }
 
-    // apply the spec strategy for the domain
-    const autoModelConfiguration = _autoModelConfiguration(domainId, allLlms);
-    if (autoModelConfiguration)
-      acc[domainId] = autoModelConfiguration;
+    // --- Auto-assign logic ---
+
+    const domainSpec = ModelDomainsRegistry[domainId] ?? undefined;
+
+    // 1. Try to find a suitable Pollinations.ai model first
+    const suitablePollinationsModel = allLlms.find(llm =>
+        llm.vId === 'pollinations.ai' && // Check if it's a Pollinations.ai model
+        llm.interfaces.includes(LLM_IF_OAI_Chat) && // Must support chat
+        (!domainSpec?.requiredInterfaces?.length || domainSpec.requiredInterfaces.every(reqIf => llm.interfaces.includes(reqIf))) // Check required interfaces
+        // Add more specific checks based on domain requirements if needed (e.g., vision, function calls)
+        // For example: (domainId === 'imageGeneration' ? (llm as any).isImageGeneration : true)
+    );
+
+    if (suitablePollinationsModel) {
+         acc[domainId] = createDModelConfiguration(domainId, suitablePollinationsModel.id);
+         return acc;
+    }
+
+
+    // 2. If no suitable Pollinations.ai model, fall back to the existing heuristic logic for other vendors
+    let filteredLlms = allLlms;
+    if (domainSpec?.requiredInterfaces?.length) {
+      const reqIfs = domainSpec.requiredInterfaces;
+      const subset = allLlms.filter(llm => reqIfs.every(reqIf => llm.interfaces.includes(reqIf)));
+      // only apply filter if we have at least one matching model
+      if (subset.length > 0)
+        filteredLlms = subset;
+    }
+
+    const vendors = _groupLlmsByVendorRankedByElo(filteredLlms);
+
+    switch (domainSpec?.autoStrategy) {
+
+      case 'topVendorTopLlm':
+        const topRankedLLMId = _strategyTopQuality(vendors);
+        if (topRankedLLMId) {
+           acc[domainId] = createDModelConfiguration(domainId, topRankedLLMId);
+           return acc;
+        }
+        break;
+
+      case 'topVendorLowestCost':
+        const lowCostLLMId = _strategyTopVendorLowestCost(vendors);
+        if (lowCostLLMId) {
+           acc[domainId] = createDModelConfiguration(domainId, lowCostLLMId);
+           return acc;
+        }
+        break;
+
+      default:
+        console.log('[DEV] unknown strategy or no suitable model for LLM domain', domainId);
+    }
+
+    // If no suitable model found at all, the assignment remains undefined,
+    // which might lead to the placeholder or no model being selected.
+    // We could potentially assign null here explicitly if we want to indicate 'no model configured'.
+    // acc[domainId] = createDModelConfiguration(domainId, null); // Optional: explicitly set to null
+
 
     return acc;
   }, {} as LlmsAssignmentsState['modelAssignments']);
