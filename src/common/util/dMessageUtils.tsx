@@ -353,6 +353,7 @@ function _prettyTokenStopReason(reason: DMessageGenerator['tokenStopReason'], co
 
 const oaiORegex = /gpt-[345](?:o|\.\d+)?-|o[1345]-|chatgpt-[45]o?|gpt-5-chat|computer-use-/;
 const geminiRegex = /gemini-|gemma-|learnlm-/;
+const pollinationAIPrefix = 'pollinations.ai-';
 
 
 /** Pretty name for a chat model ID - VERY HARDCODED - shall use the Avatar Label-style code instead */
@@ -360,6 +361,29 @@ export function prettyShortChatModelName(model: string | undefined): string {
   if (!model) return '';
 
   // TODO: fully reform this function to be using information from the DLLM, rather than this manual mapping
+
+  // [Pollinations.ai] - Add Pollinations.ai specific formatting before other vendors
+  if (model.startsWith(pollinationAIPrefix)) {
+      // Remove the 'pollinations.ai-' prefix
+      let prettyModel = model.substring(pollinationAIPrefix.length);
+
+       // Handle specific Pollinations.ai model names based on pollinations.models.ts
+       switch (prettyModel) {
+           case 'openai-audio':
+               return 'Pollinations.AI Audio'; // More descriptive name
+           case 'flux':
+               return 'Pollinations.AI Flux (Image)'; // Indicate image model
+           case 'kontext':
+               return 'Pollinations.AI Kontext (Image)'; // Indicate image model
+            case 'turbo':
+               return 'Pollinations.AI Turbo (Image)'; // Indicate image model
+           // Add more cases for other Pollinations.ai models if needed
+           default:
+               // For other Pollinations.ai models, replace hyphens with spaces and capitalize words
+               return 'Pollinations.AI ' + prettyModel.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+       }
+  }
+
 
   // [OpenAI]
   let prefixIndex = model.search(oaiORegex);
