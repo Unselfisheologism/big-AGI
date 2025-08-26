@@ -71,7 +71,7 @@ export const ModelVendorPollinationsAI: IModelVendor<DPollinationsAIAccess, Open
       let body: any = JSON.stringify(chatGenerateRequest); // Default body
 
      // Handle the specific case for 'openai-audio' and chat completions using GET to root endpoint
-     if (llmId === 'openai-audio' && apiPath === '/chat/completions') {
+     if (llmId === 'openai-audio') {
         console.warn('Handling openai-audio chat completion with Pollinations.ai GET endpoint.');
         method = 'GET';
         headers = {}; // GET requests typically don't need Content-Type application/json
