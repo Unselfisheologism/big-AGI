@@ -369,7 +369,7 @@ export function prettyShortChatModelName(model: string | undefined): string {
 
        // Handle specific Pollinations.ai model names based on pollinations.models.ts
        switch (prettyModel) {
-           case 'llama-vision':
+           case 'elixposearch':
                return 'Pollinations.AI Audio'; // More descriptive name
            case 'flux':
                return 'Pollinations.AI Flux (Image)'; // Indicate image model
