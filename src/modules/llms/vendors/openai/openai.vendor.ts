@@ -1,13 +1,16 @@
+// src/modules/llms/vendors/openai/openai.vendor.ts
+
 import { apiAsync } from '~/common/util/trpc.client';
 
 import type { IModelVendor } from '../IModelVendor';
 import type { OpenAIAccessSchema } from '../../server/openai/openai.router';
 import type { ModelDescriptionSchema } from '../../server/llm.server.types'; // Import ModelDescriptionSchema
-import type { DLLM, DModelInterfaceV1 } from '~/common/stores/llms/llms.types'; // Import DModelInterfaceV1
+import type { DLLM, DModelInterfaceV1 } from '~/common/stores/llms/llms.types'; // Import specific interfaces
 import { LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json, LLM_IF_Outputs_Audio } from '~/common/stores/llms/llms.types'; // Import specific interfaces
 import type { DModelDomainId } from '~/common/stores/llms/model.domains.types';
 
-import { PollinationsaiWire_API_Models_List } from 'src/modules/pollinationsai/server/pollinationsai.wiretypes'; // Import Pollinations.ai wiretypes
+// Remove the import for PollinationsaiWire_API_Models_List as we are not fetching the model list dynamically
+// import { PollinationsaiWire_API_Models_List } from 'src/modules/pollinationsai/server/pollinationsai.wiretypes';
 
 
 // special symbols
@@ -69,7 +72,7 @@ export const ModelVendorPollinationsAI: IModelVendor<DPollinationsAIAccess, Open
      const apiKey = access.oaiKey; // Use oaiKey for Pollinations.ai token
 
      let url = '';
-     let method: 'POST' | 'GET' = 'POST'; // Default method
+     let method: 'POST' | 'GET' = 'GET'; // Set default method to GET
       let headers: HeadersInit = {
        // 'Content-Type': 'application/json', // Not needed for GET requests
        ...(apiKey && { 'Authorization': `Bearer ${apiKey}` }),
@@ -77,8 +80,8 @@ export const ModelVendorPollinationsAI: IModelVendor<DPollinationsAIAccess, Open
       let body: any = undefined; // No body for GET requests
 
       // Use the GET endpoint with prompt and model as URL parameters for chat completions
-     if (apiPath === '/chat/completions') {
-        method = 'GET';
+     if (apiPath === url ) { // This condition is correct, as apiPath from openAIAccess will be the base URL
+        // method is already GET by default
         headers = {}; // Remove Content-Type for GET requests
 
         // Extract prompt from the chatGenerateRequest (assuming it's in the messages array)
@@ -98,21 +101,15 @@ export const ModelVendorPollinationsAI: IModelVendor<DPollinationsAIAccess, Open
         }
 
         const encodedPrompt = encodeURIComponent(prompt);
-        // Construct the GET URL for text generation
-        url = `${textHost}/${encodedPrompt}?model=${llmId}`; // Include model parameter
+        // Construct the final GET URL by appending prompt and model to the base URL
+        url = `${apiPath}${encodedPrompt}?model=${llmId}`; // Use apiPath as the base URL
 
         // TODO: Add logic here to include other relevant parameters from chatGenerateRequest
         // like temperature, etc., as query parameters in the URL if supported by the GET endpoint.
 
-     } else if (apiPath === '/models') {
-        // Model listing is handled by rpcUpdateModelsOrThrow
-         console.warn('Attempted to list models via passthrough - should use rpcUpdateModelsOrThrow instead.');
-          throw new Error('Model listing via passthrough is not supported for Pollinations.ai');
-     }
-      else {
-         // Handle other potential API paths if Pollinations.ai supports them
-          url = `${textHost}${apiPath}`;
-           console.warn(`Using generic passthrough for unexpected API path: ${apiPath}`);
+     } else {
+         // Throw an error for any other apiPath received by this Pollinations.ai passthrough
+         throw new Error(`Unsupported API path for Pollinations.ai text generation: ${apiPath}`);
      }
 
       if (!url) {

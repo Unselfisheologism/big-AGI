@@ -1,3 +1,5 @@
+// src/modules/llms/server/openai/openai.router.ts
+
 import * as z from 'zod/v4';
 import { TRPCError } from '@trpc/server';
 
@@ -43,13 +45,13 @@ export type OpenAIAccessSchema = z.infer<typeof openAIAccessSchema>;
 //   temperature: z.number().min(0).max(2).optional(),
 //   maxTokens: z.number().min(1).optional(),
 // });
-// export type OpenAIModelSchema = z.infer<typeof openAIModelSchema>;
+// export type OpenAIModelSchema = z.infer<typeof OpenAIModelSchema>;
 
 // export const openAIHistorySchema = z.array(z.object({
 //   role: z.enum(['assistant', 'system', 'user'/*, 'function'*/]),
 //   content: z.string(),
 // }));
-// export type OpenAIHistorySchema = z.infer<typeof openAIHistorySchema>;
+// export type OpenAIHistorySchema = z.infer<typeof OpenAIHistorySchema>;
 
 
 // Fixup host function
@@ -394,17 +396,7 @@ const DEFAULT_LOCALAI_HOST = 'http://127.0.0.1:8080';
 
 export function openAIAccess(access: OpenAIAccessSchema, modelRefId: string | null, apiPath: string): { headers: HeadersInit, url: string } {
   // Handle LocalAI separately
-  if (access.dialect === 'pollinations.ai') {
-    const localAIKey = access.oaiKey || env.LOCALAI_API_KEY || '';
-    const localAIHost = fixupHost(access.oaiHost || env.LOCALAI_API_HOST || DEFAULT_LOCALAI_HOST, apiPath);
-    return {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(localAIKey && { Authorization: `Bearer ${localAIKey}` }),
-      },
-      url: localAIHost + apiPath,
-    };
-  }
+
 
   // For all other dialects, use Pollinations.AI
   const pollKey = access.oaiKey || env.POLLINATIONS_API_KEY || '';
@@ -414,18 +406,7 @@ export function openAIAccess(access: OpenAIAccessSchema, modelRefId: string | nu
   if (apiPath === '/chat/completions') {
     pollHost = access.oaiHost || env.POLLINATIONS_API_HOST || DEFAULT_POLLINATIONS_API_HOST;
     url = `${fixupHost(pollHost, '/openai')}/openai`; // Use the OpenAI-compatible endpoint path
-  } else if (apiPath.startsWith('/images/generations')) {
-      // Pollinations.ai image generation uses a GET request to a different endpoint structure
-      // The construction of the full image URL should happen in the createImages mutation
-      pollHost = access.oaiHost?.replace('/openai', '') || env.POLLINATIONS_API_HOST?.replace('/openai', '') || 'https://image.pollinations.ai'; // Use the image host
-      url = `${fixupHost(pollHost, '')}${apiPath}`; // Keep the apiPath as is for now, will be fully constructed in createImages
-      console.warn(`openAIAccess: Image generation URL will be fully constructed in createImages mutation.`);
-    }
-  else if (apiPath === '/models') {
-    // Pollinations.ai model listing endpoint
-    pollHost = access.oaiHost || env.POLLINATIONS_API_HOST || DEFAULT_POLLINATIONS_API_HOST;
-    url = `${fixupHost(pollHost, '/models')}/models`;
-  }
+  } 
   else {
     // Handle other potential API paths if Pollinations.ai supports them
     pollHost = access.oaiHost || env.POLLINATIONS_API_HOST || DEFAULT_POLLINATIONS_API_HOST;
