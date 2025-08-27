@@ -49,16 +49,14 @@ export const ModelVendorPollinationsAI: IModelVendor<DPollinationsAIAccess, Open
     console.warn('Pollinations.ai does not have a standard /models endpoint for listing details. Using placeholder model definition.');
     return {
       models: [{
-        id: 'openai-audio', // Use the preconfigured model ID
-        label: 'OpenAI GPT-4o Mini Audio Preview',
+        id: 'llama-vision', // Use the preconfigured model ID
+        label: 'Llama 3.2 11B Vision',
         created: 0, updated: 0,
         description: 'A default text model from Pollinations.AI',
         contextWindow: 8192, // Placeholder context window
-        interfaces: [LLM_IF_OAI_Chat, LLM_IF_Outputs_Audio], // Assume chat and audio output
+        interfaces: [LLM_IF_OAI_Chat], // Assume chat and audio output
         hidden: false,
         isVision: true, // Assuming it has vision capabilities based on previous context
-        isTts: true, // Mark as TTS capable
-        isStt: true, // Mark as STT capable
         functionCalling: true, // Assuming it has function calling capabilities
         pricing: { chatIn: 0, chatOut: 0 } as any, // Unknown pricing
       }],
