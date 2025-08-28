@@ -63,7 +63,7 @@ export const useT2ISettingsStore = create<T2ISettingsStore>()(
       pollinationsAISeed: undefined,
       setPollinationsAISeed: (pollinationsAISeed) => set({ pollinationsAISeed }),
 
-      pollinationsAINologo: undefined,
+      pollinationsAINologo: true,
       setPollinationsAINologo: (pollinationsAINologo) => set({ pollinationsAINologo }),
 
       pollinationsAIEnhance: undefined,
@@ -96,7 +96,7 @@ export const useT2ISettingsStore = create<T2ISettingsStore>()(
             pollinationsAIModelId: 'flux',
             pollinationsAISize: '1024x1024',
             pollinationsAISeed: undefined,
-            pollinationsAINologo: undefined,
+            pollinationsAINologo: true,
             pollinationsAIEnhance: undefined,
             pollinationsAIPrivate: undefined,
             pollinationsAIReferrer: undefined,

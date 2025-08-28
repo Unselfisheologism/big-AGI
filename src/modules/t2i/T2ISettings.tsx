@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { Alert, FormControl, FormLabel, Stack } from '@mui/joy';
+import { Alert, Checkbox, FormControl, FormLabel, Stack } from '@mui/joy';
 
 import { FormChipControl } from '../../common/components/forms/FormChipControl'; // Corrected import path
 import { FormTextField } from '../../common/components/forms/FormTextField'; // Assuming FormTextField is the correct component and path
@@ -106,13 +106,10 @@ export function T2ISettings() {
           value={pollinationsAISeed?.toString() || ''}
           onChange={(text: string) => setPollinationsAISeed(parseInt(text) || undefined)} // Convert string to number or undefined
         />
-         {/* Pollinations.ai doesn't have a 'nologo' parameter on the GET endpoint based on documentation.
-             Leaving this out for now. If needed, this would be where you add it based on your store.
          <FormControl orientation="horizontal" sx={{ justifyContent: 'space-between' }}>
            <FormLabel>No Logo</FormLabel>
-           <Checkbox checked={pollinationsAINologo} onChange={(e) => setPollinationsAINologo(e.target.checked)} />
+           <Checkbox checked={pollinationsAINologo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPollinationsAINologo(e.target.checked)} />
          </FormControl>
-         */}
       </Stack>
     )}
   </>;
