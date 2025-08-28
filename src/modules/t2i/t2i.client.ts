@@ -63,7 +63,7 @@ export function useCapabilityTextToImage(): CapabilityTextToImage {
     const activeProvider = _resolveActiveT2IProvider(userProviderId, providers);
     const mayWork = providers.some(p => p.configured);
     return {
-      mayWork, 
+      mayWork,
       mayEdit: false,
       providers,
       activeProvider,
@@ -125,13 +125,7 @@ async function _t2iGenerateImagesOrThrow({ providerId, vendor }: TextToImageProv
 
   switch (vendor) {
 
-    case 'gemini':
-      throw new Error('Gemini Imagen integration coming soon');
-
-    case 'localai':
-      throw new Error('LocalAI t2i integration is not yet available');
-
-    case 'pollinations.ai':
+    case 'pollinations.ai': {
       // Pollinations.ai uses a simple GET endpoint
       const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&width=${pollinationsAIWidth}&height=${pollinationsAIHeight}&seed=${pollinationsAISeed}&n=${count}`;
 
@@ -164,11 +158,11 @@ async function _t2iGenerateImagesOrThrow({ providerId, vendor }: TextToImageProv
         };
         generatedImages.push({ base64Data, mimeType: imageBlob.type, width, height, altText: prompt, generatorName: 'Pollinations.ai', generatedAt: new Date().toISOString(), parameters });
       }
-      // if (!provider.providerId)
-      //   throw new Error('No LocalAI Model service configured for TextToImage');
-      // return await localaiGenerateImages(provider.id, prompt, count);      
-    case 'xai':
-      throw new Error('xAI image generation integration coming soon');
+      return generatedImages;
+    }
+    // if (!provider.providerId)
+    //   throw new Error('No LocalAI Model service configured for TextToImage');
+    // return await localaiGenerateImages(provider.id, prompt, count);
 
     default:
       throw new Error(`Unknown T2I vendor: ${vendor}`);
@@ -316,7 +310,7 @@ function _resolveActiveT2IProvider(userSelectedId: string | null, prioritizedPro
     const chosen = prioritizedProviders.find(p => p.providerId === userSelectedId && p.configured);
     if (chosen) return chosen;
   }
-  
+
   // Auto-select: find highest priority configured provider (providers are already sorted)
   return prioritizedProviders.find(p => p.configured) || null;
 }
