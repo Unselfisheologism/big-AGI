@@ -49,8 +49,8 @@ export const ModelVendorPollinationsAI: IModelVendor<DPollinationsAIAccess, Open
     console.warn('Pollinations.ai does not have a standard /models endpoint for listing details. Using placeholder model definition.');
     return {
       models: [{
-        id: 'elixposearch', // Use the preconfigured model ID
-        label: 'Elixpo Search',
+        id: 'openai', // Use the preconfigured model ID
+        label: 'OpenAI GPT-4.1-nano',
         created: 0, updated: 0,
         description: 'A default text model from Pollinations.AI',
         contextWindow: 8192, // Placeholder context window
