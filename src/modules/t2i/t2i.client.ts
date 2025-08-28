@@ -116,7 +116,7 @@ async function _t2iGenerateImagesOrThrow({ providerId, vendor }: TextToImageProv
     pollinationsAIWidth, pollinationsAIHeight, pollinationsAIModelId, pollinationsAISeed,
   } = useT2ISettingsStore.getState();
 
-
+  const nologo = pollinationsAISeed
   // Default to 'flux' for Pollinations.ai if a specific model isn't picked
   const model = pollinationsAIModelId || 'flux'; // Use the actual stored model or default
 
@@ -153,6 +153,7 @@ async function _t2iGenerateImagesOrThrow({ providerId, vendor }: TextToImageProv
 
         // Construct parameters object
         const parameters = {
+          nologo,
           model,
           seed, // Assuming the same seed for all images if count > 1 for this endpoint
         };
