@@ -10,7 +10,8 @@ export async function pollinationsSpeakText(text: string, voice: string) {
   if (!text.trim() || !voice) return;
 
   try {
-    const response = await fetch('https://text.pollinations.ai/openai', {
+    const url = `https://text.pollinations.ai/${encodeURIComponent(text)}?model=openai-audio&voice=${voice}`;
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
