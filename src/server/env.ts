@@ -35,13 +35,6 @@ export const env = createEnv({
     GOOGLE_CLOUD_API_KEY: z.string().optional(),
     GOOGLE_CSE_ID: z.string().optional(),
 
-
-    // Text-To-Speech: ElevenLabs - speech.ts
-    ELEVENLABS_API_KEY: z.string().optional(),
-    ELEVENLABS_API_HOST: z.url().optional(),
-    ELEVENLABS_VOICE_ID: z.string().optional(),
-
-
     // Backend: HTTP Basic Authentication
     HTTP_BASIC_AUTH_USERNAME: z.string().optional(),
     HTTP_BASIC_AUTH_PASSWORD: z.string().optional(),

@@ -11,7 +11,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import TerminalOutlinedIcon from '@mui/icons-material/TerminalOutlined';
 
 import { BrowseSettings } from '~/modules/browse/BrowseSettings';
-import { ElevenlabsSettings } from '~/modules/elevenlabs/ElevenlabsSettings';
 import { GoogleSearchSettings } from '~/modules/google/GoogleSearchSettings';
 import { T2ISettings } from '~/modules/t2i/T2ISettings';
 
@@ -262,17 +261,6 @@ export function SettingsModal(props: {
             </Topic>
             <Topic icon={<ScienceIcon />} title='Labs' startCollapsed>
               <UxLabsSettings />
-            </Topic>
-          </Topics>
-        </TabPanel>
-
-        <TabPanel value='voice' variant='outlined' sx={_styles.tabPanel}>
-          <Topics>
-            <Topic icon={/*'🎙️'*/ <MicIcon />} title='Microphone'>
-              <VoiceSettings />
-            </Topic>
-            <Topic icon={/*'📢'*/ <RecordVoiceOverIcon />} title='ElevenLabs API'>
-              <ElevenlabsSettings />
             </Topic>
           </Topics>
         </TabPanel>

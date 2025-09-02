@@ -22,15 +22,13 @@ export interface CapabilityBrowserSpeechRecognition {
 export { browserSpeechRecognitionCapability as useCapabilityBrowserSpeechRecognition } from './speechrecognition/useSpeechRecognition';
 
 
-/// Speech Synthesis: ElevenLabs
+/// Speech Synthesis: Pollinations
 
-export interface CapabilityElevenLabsSpeechSynthesis {
+export interface CapabilityPollinationsSpeechSynthesis {
   mayWork: boolean;
-  isConfiguredServerSide: boolean;
-  isConfiguredClientSide: boolean;
 }
 
-export { useCapability as useCapabilityElevenLabs } from '~/modules/elevenlabs/elevenlabs.client';
+export { useCapability as useCapabilityPollinations } from '~/modules/pollinations/pollinations.client';
 
 
 /// Image Generation

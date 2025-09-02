@@ -12,7 +12,7 @@ import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import { animationColorRainbow } from '~/common/util/animUtils';
 import { navigateBack } from '~/common/app.routes';
 import { optimaOpenPreferences } from '~/common/layout/optima/useOptima';
-import { useCapabilityBrowserSpeechRecognition, useCapabilityElevenLabs } from '~/common/components/useCapabilities';
+import { useCapabilityBrowserSpeechRecognition, useCapabilityPollinations } from '~/common/components/useCapabilities';
 import { useChatStore } from '~/common/stores/chat/store-chats';
 import { useUICounter } from '~/common/stores/store-ui';
 
@@ -45,7 +45,7 @@ export function CallWizard(props: { strict?: boolean, conversationId: string | n
 
   // external state
   const recognition = useCapabilityBrowserSpeechRecognition();
-  const synthesis = useCapabilityElevenLabs();
+  const synthesis = useCapabilityPollinations();
   const chatIsEmpty = useChatStore(state => {
     if (!props.conversationId)
       return false;
@@ -66,7 +66,7 @@ export function CallWizard(props: { strict?: boolean, conversationId: string | n
 
   const handleOverrideRecognition = React.useCallback(() => setRecognitionOverride(true), []);
 
-  const handleConfigureElevenLabs = React.useCallback(() => optimaOpenPreferences('voice'), []);
+  const handleConfigureVoice = React.useCallback(() => optimaOpenPreferences('voice'), []);
 
   const handleFinishButton = React.useCallback(() => {
     if (!allGood)
@@ -129,12 +129,9 @@ export function CallWizard(props: { strict?: boolean, conversationId: string | n
     {/* Text to Speech status */}
     <StatusCard
       icon={<RecordVoiceOverTwoToneIcon />}
-      text={
-        (synthesis.mayWork ? 'Voice synthesis should be ready.' : 'There might be an issue with ElevenLabs voice synthesis.')
-        + (synthesis.isConfiguredServerSide ? '' : (synthesis.isConfiguredClientSide ? '' : ' Please add your API key in the settings.'))
-      }
+      text={synthesis.mayWork ? 'Voice synthesis should be ready.' : 'There might be an issue with Pollinations.AI voice synthesis.'}
       button={synthesis.mayWork ? undefined : (
-        <Button variant='outlined' onClick={handleConfigureElevenLabs} sx={{ mx: 1 }}>
+        <Button variant='outlined' onClick={handleConfigureVoice} sx={{ mx: 1 }}>
           Configure
         </Button>
       )}

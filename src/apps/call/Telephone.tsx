@@ -14,9 +14,9 @@ import { ScrollToBottomButton } from '~/common/scroll-to-bottom/ScrollToBottomBu
 import { useChatLLMDropdown } from '../chat/components/layout-bar/useLLMDropdown';
 
 import { SystemPurposeId, SystemPurposes } from '../../data';
-import { elevenLabsSpeakText } from '~/modules/elevenlabs/elevenlabs.client';
+import { pollinationsSpeakText } from 'src/modules/pollinations/pollinations.client';
 import { AixChatGenerateContent_DMessage, aixChatGenerateContent_DMessage_FromConversation } from '~/modules/aix/client/aix.client';
-import { useElevenLabsVoiceDropdown } from '~/modules/elevenlabs/useElevenLabsVoiceDropdown';
+import { usePollinationsVoiceDropdown } from '~/modules/pollinations/usePollinationsVoiceDropdown';
 
 import type { OptimaBarControlMethods } from '~/common/layout/optima/bar/OptimaBarDropdown';
 import { AudioPlayer } from '~/common/util/audio/AudioPlayer';
@@ -49,7 +49,7 @@ function CallMenu(props: {
 
   // external state
   const { grayUI, toggleGrayUI } = useAppCallStore();
-  const { voicesDropdown } = useElevenLabsVoiceDropdown(false, !props.override);
+  const { voicesDropdown } = usePollinationsVoiceDropdown(!props.override);
 
   const handlePushToTalkToggle = () => props.setPushToTalk(!props.pushToTalk);
 
@@ -118,7 +118,7 @@ export function Telephone(props: {
   }));
   const persona = SystemPurposes[props.callIntent.personaId as SystemPurposeId] ?? undefined;
   const personaCallStarters = persona?.call?.starters ?? undefined;
-  const personaVoiceId = overridePersonaVoice ? undefined : (persona?.voices?.elevenLabs?.voiceId ?? undefined);
+  const personaVoiceId = overridePersonaVoice ? undefined : (persona?.voices?.pollinations?.voiceId ?? undefined);
   const personaSystemMessage = persona?.systemMessage ?? undefined;
 
   // hooks and speech
@@ -186,7 +186,9 @@ export function Telephone(props: {
     setCallMessages([createDMessageTextContent('assistant', firstMessage)]); // [state] set assistant:hello message
 
     // fire/forget
-    void elevenLabsSpeakText(firstMessage, personaVoiceId, true, true);
+    if (personaVoiceId) {
+      void pollinationsSpeakText(firstMessage, personaVoiceId);
+    }
 
     return () => clearInterval(interval);
   }, [isConnected, personaCallStarters, personaVoiceId]);
@@ -270,9 +272,15 @@ export function Telephone(props: {
       fullMessage.generator = status.lastDMessage.generator;
       setCallMessages(messages => [...messages, fullMessage]); // [state] append assistant:call_response
 
+      // seed the first message
+      const phoneMessages = personaCallStarters || ['Hello?', 'Hey!'];
+      const firstMessage = phoneMessages[Math.floor(Math.random() * phoneMessages.length)];
+
       // fire/forget
       if (status.outcome === 'success' && finalText?.length >= 1)
-        void elevenLabsSpeakText(finalText, personaVoiceId, true, true);
+        if (personaVoiceId) {
+          void pollinationsSpeakText(firstMessage, personaVoiceId);
+        }
 
     }).catch((err: DOMException) => {
       if (err?.name !== 'AbortError') {

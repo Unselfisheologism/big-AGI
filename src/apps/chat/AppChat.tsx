@@ -10,7 +10,7 @@ import type { DiagramConfig } from '~/modules/aifn/digrams/DiagramsModal';
 import type { TradeConfig } from '~/modules/trade/TradeModal';
 import { downloadSingleChat, importConversationsFromFilesAtRest, openConversationsAtRestPicker } from '~/modules/trade/trade.client';
 import { imaginePromptFromTextOrThrow } from '~/modules/aifn/imagine/imaginePromptFromText';
-import { elevenLabsSpeakText } from '~/modules/elevenlabs/elevenlabs.client';
+import { pollinationsSpeakText } from '~/modules/pollinations/pollinations.client';
 import { useAreBeamsOpen } from '~/modules/beam/store-beam.hooks';
 import { useCapabilityTextToImage } from '~/modules/t2i/t2i.client';
 
@@ -346,7 +346,8 @@ export function AppChat() {
   }, [handleExecuteAndOutcome]);
 
   const handleTextSpeak = React.useCallback(async (text: string): Promise<void> => {
-    await elevenLabsSpeakText(text, undefined, true, true);
+    // Use a default voice since we need a valid string
+    await pollinationsSpeakText(text, 'alloy');
   }, []);
 
 

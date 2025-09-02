@@ -3,6 +3,7 @@ import * as React from 'react';
 import { FormControl } from '@mui/joy';
 
 import { useChatMicTimeoutMs } from '../chat/store-app-chat';
+import { usePollinationsVoiceDropdown } from '../../modules/pollinations/usePollinationsVoiceDropdown';
 
 import { FormLabelStart } from '~/common/components/forms/FormLabelStart';
 import { FormRadioControl } from '~/common/components/forms/FormRadioControl';
@@ -15,6 +16,7 @@ export function VoiceSettings() {
   // external state
   const isMobile = useIsMobile();
   const [chatTimeoutMs, setChatTimeoutMs] = useChatMicTimeoutMs();
+  const { voicesDropdown } = usePollinationsVoiceDropdown();
 
 
   // this converts from string keys to numbers and vice versa
@@ -27,8 +29,13 @@ export function VoiceSettings() {
     <FormControl orientation='horizontal' sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
       <FormLabelStart title='Language'
                       description='ASR and TTS'
-                      tooltip='Currently for Microphone input and Voice output. Microphone support varies by browser (iPhone/Safari lacks speech input). We will use the ElevenLabs MultiLanguage model if a language other than English is selected.' />
+                      tooltip='Currently for Microphone input and Voice output. We will use the Pollinations.AI MultiLanguage model if a language other than English is selected.' />
       <LanguageSelect />
+    </FormControl>
+
+    <FormControl orientation='horizontal' sx={{ justifyContent: 'space-between' }}>
+      <FormLabelStart title='Voice' description='TTS voice' />
+      {voicesDropdown}
     </FormControl>
 
     {!isMobile && <FormRadioControl
