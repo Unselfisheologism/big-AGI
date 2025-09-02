@@ -113,12 +113,12 @@ async function _t2iGenerateImagesOrThrow({ providerId, vendor }: TextToImageProv
 
   // Pollinations.ai parameters - map from DALL-E configuration or use defaults
   const {
-    pollinationsAIWidth, pollinationsAIHeight, pollinationsAIModelId, pollinationsAISeed,
+    pollinationsAIWidth, pollinationsAIHeight, pollinationsAIModelId, pollinationsAISeed,pollinationsAINologo
   } = useT2ISettingsStore.getState();
 
-  const nologo = pollinationsAISeed
-  // Default to 'flux' for Pollinations.ai if a specific model isn't picked
-  const model = pollinationsAIModelId || 'flux'; // Use the actual stored model or default
+  const nologo = pollinationsAINologo
+  // Default to 'kontext' for Pollinations.ai if a specific model isn't picked
+  const model = pollinationsAIModelId || 'kontext'; // Use the actual stored model or default
 
   // Basic seed for reproducibility - Pollinations.ai uses 'seed'
   const seed = Math.floor(Math.random() * 1000000); // Example: use a random seed if not provided

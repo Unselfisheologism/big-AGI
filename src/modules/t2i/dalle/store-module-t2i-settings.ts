@@ -54,7 +54,7 @@ export const useT2ISettingsStore = create<T2ISettingsStore>()(
   persist(
     (set) => ({
 
-      pollinationsAIModelId: 'flux', // auto-select default
+      pollinationsAIModelId: 'kontext', // auto-select default
       setPollinationsAIModelId: (pollinationsAIModelId) => set({ pollinationsAIModelId }),
 
       pollinationsAISize: '1024x1024',
@@ -93,7 +93,7 @@ export const useT2ISettingsStore = create<T2ISettingsStore>()(
           state = {
             ...(state as T2ISettingsStore),
             // No direct migration needed, reset to Pollinations.ai defaults
-            pollinationsAIModelId: 'flux',
+            pollinationsAIModelId: 'kontext',
             pollinationsAISize: '1024x1024',
             pollinationsAISeed: undefined,
             pollinationsAINologo: true,
