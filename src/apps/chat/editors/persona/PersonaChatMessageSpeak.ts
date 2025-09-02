@@ -10,12 +10,12 @@ export type AutoSpeakType = 'off' | 'firstLine' | 'all';
 
 export class PersonaChatMessageSpeak implements PersonaProcessorInterface {
   private spokenLine: boolean = false;
-  private readonly voiceId: string | null;
-
-  constructor(private autoSpeakType: AutoSpeakType) {
-    const { voiceId } = usePollinationsVoiceDropdown();
-    this.voiceId = voiceId;
-  }
+  
+  // Constructor now accepts voiceId as a parameter instead of using the hook
+  constructor(
+    private autoSpeakType: AutoSpeakType,
+    private voiceId: string | null
+  ) {}
 
   handleMessage(accumulatedMessage: Partial<AixChatGenerateContent_DMessage>, messageComplete: boolean) {
     if (this.autoSpeakType === 'off' || this.spokenLine) return;

@@ -58,7 +58,9 @@ export async function runPersonaOnConversationHead(
   const { autoSpeak, autoSuggestDiagrams, autoSuggestHTMLUI, autoSuggestQuestions, autoTitleChat, chatKeepLastThinkingOnly } = getChatAutoAI();
 
   // AutoSpeak
-  const autoSpeaker: PersonaProcessorInterface | null = autoSpeak !== 'off' ? new PersonaChatMessageSpeak(autoSpeak) : null;
+  // AutoSpeak
+  const autoSpeaker: PersonaProcessorInterface | null = 
+    autoSpeak !== 'off' ? new PersonaChatMessageSpeak(autoSpeak, null) : null;
 
   // when an abort controller is set, the UI switches to the "stop" mode
   const abortController = new AbortController();

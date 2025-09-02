@@ -164,6 +164,11 @@ export function Telephone(props: {
     setStage('ended');
   };
 
+  const firstMessage = React.useMemo(() => 
+    personaCallStarters?.[0] || personaSystemMessage || 'Hello',
+    [personaCallStarters, personaSystemMessage]
+  );
+  
   // [E] pickup -> seed message and call timer
   // FIXME: Overriding the voice will reset the call - not a desired behavior
   React.useEffect(() => {
